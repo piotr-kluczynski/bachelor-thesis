@@ -1,4 +1,14 @@
 import random
+from collections import deque
+
+HEX_DIRECTIONS = [
+    (1, -1, 0),
+    (1, 0, -1),
+    (0, 1, -1),
+    (-1, 1, 0),
+    (-1, 0, 1),
+    (0, -1, 1)
+]
 
 class Simulation:
     def __init__(self, players):
@@ -11,27 +21,94 @@ class Simulation:
         self.new_unit_id = 0
 
     def add_player_actions(self, owner, action_list):
-        self.players_actions[owner] = action_list
+        movement_actions, support_actions, attack_actions = self.process_actions(action_list)
+        if movement_actions is None:
+            return False
+
+        self.players_actions[owner] = (movement_actions, support_actions, attack_actions)
         return True
+
+    def process_actions(self, action_list):
+        # Divide actions into categories: Movement, Support, Attack
+        movement_actions = []
+        support_actions = []
+        attack_actions = []
+
+        for action in action_list:
+            if action.unit_action == "Move":
+                movement_actions.append(action)
+            elif action.unit_action == "Support":
+                support_actions.append(action)
+            elif action.unit_action == "Attack":
+                attack_actions.append(action)
+
+        # Expand movement actions into separate moves
+        expanded_movement_actions = []
+        for action in movement_actions:
+            dq, dr, ds = action.move_vec
+            unit = self.units[action.unit_id]
+            unit_tile = unit.tile
+            target_tile = self.board.get_tile_by_coord(unit_tile.q + dq, unit_tile.r + dr, unit_tile.s + ds)
+
+            path = self.board.find_shortest_path(unit_tile, target_tile, unit.movement_left)
+
+            if path is None:
+                return None, None, None
+            else:
+                for i in range(0, len(path)-1):
+                    move_vec = (path[i+1].q - path[i].q, path[i+1].r - path[i].r, path[i+1].s + path[i].s)
+                    expanded_movement_actions.append(Order("Move", action.unit_id, move_vec=move_vec))
+        movement_actions = expanded_movement_actions
+
+        # Removing impossible support actions
+        for action in support_actions:
+            unit_tile = self.units[action.unit_id].tile
+            target_tile = self.units[action.target_id].tile
+
+            if calc_distance(unit_tile.q, unit_tile.r, unit_tile.s, target_tile.q, target_tile.r, target_tile.s) > 1:
+                return None, None, None
+
+        # Removing impossible attack actions
+        for action in attack_actions:
+            unit_tile = self.units[action.unit_id].tile
+            target_tile = self.units[action.target_id].tile
+
+            if calc_distance(unit_tile.q, unit_tile.r, unit_tile.s, target_tile.q, target_tile.r, target_tile.s) > 1:
+                return None, None, None
+
+        return movement_actions, support_actions, attack_actions
 
     def execute_action(self, order):
         unit = self.units[order.unit_id]
 
+        if order.unit_action == "Hold":
+            return True
+
         if order.unit_action == "Move":
             q, r, s = order.move_vec
-            return unit.move(q, r, s, self.board)
+            return self.move_unit(unit, q, r, s)
 
         target_unit = self.units[order.target_id]
-        target_tile = self.board.get_tile_by_unit(target_unit)
 
         if order.unit_action == "Attack":
-            return unit.attack(target_tile, self.board)
+            return self.attack_unit(unit, target_unit)
 
         if order.unit_action == "Support":
-            return unit.support(target_tile, self.board)
+            return self.support_unit(unit, target_unit)
 
         return False
 
+    # GENERATING BOARD
+    def create_empty_board(self, q_range, r_range, s_range):
+        new_tiles = {}
+        for q in range(-q_range, q_range+1):
+            for r in range(-r_range, r_range+1):
+                for s in range(-s_range, s_range+1):
+                    if q + r + s == 0:
+                        new_tiles[(q, r, s)] = Tile(q, r, s)
+        self.board.tiles = new_tiles
+
+    # CREATING UNITS
     def add_light_infantry(self, owner, q, r, s):
         tile = self.board.get_tile_by_coord(q, r, s)
 
@@ -40,6 +117,7 @@ class Simulation:
 
         light_infantry = Unit(self.new_unit_id, owner, 2, 1, 6)
         tile.unit = light_infantry
+        light_infantry.tile = tile
 
         self.units.update({self.new_unit_id: light_infantry})
         self.new_unit_id += 1
@@ -53,6 +131,7 @@ class Simulation:
 
         heavy_infantry = Unit(self.new_unit_id, owner, 1, 2, 8)
         tile.unit = heavy_infantry
+        heavy_infantry.tile = tile
 
         self.units.update({self.new_unit_id: heavy_infantry})
         self.new_unit_id += 1
@@ -66,9 +145,126 @@ class Simulation:
 
         cavalry = Unit(self.new_unit_id, owner, 3, 3, 6)
         tile.unit = cavalry
+        cavalry.tile = tile
 
         self.units.update({self.new_unit_id: cavalry})
         self.new_unit_id += 1
+
+        return True
+
+    # UNIT ACTIONS
+    def move_unit(self, unit, dq, dr, ds):
+        if unit.movement_left <= 0:
+            return False
+
+        current_tile = unit.tile
+
+        new_q = current_tile.q + dq
+        new_r = current_tile.r + dr
+        new_s = current_tile.s + ds
+
+        target_tile = self.board.get_tile_by_coord(new_q, new_r, new_s)
+        if target_tile is None:
+            return False
+
+        if not target_tile.is_available():
+            return False
+
+        target_tile.unit = self
+        current_tile.unit = None
+        unit.movement_left -= 1
+
+        return True
+    def attack_unit(self, unit1, unit2):
+        tile1 = unit1.tile
+        tile2 = unit2.tile
+
+        if calc_distance(tile1.q, tile1.r, tile1.s, tile2.q, tile2.r, tile2.s) > 1:
+            return False
+
+        if not unit2.alive:
+            return False
+
+        attack_power = random.randrange(1, unit1.strength)
+        for _ in unit1.supporting_units:
+            attack_power += 2
+
+        defend_power = random.randrange(1, unit2.strength)
+        for _ in unit2.supporting_units:
+            defend_power += 2
+
+        if defend_power >= attack_power:
+            # Defenders stand their ground
+            return True
+        else:
+            if 2*defend_power <= attack_power:
+                # Defenders are completely destroyed
+                unit2.alive = False
+                return True
+
+            # Defenders were defeated and fall back
+            self.push_chain(unit1, unit2)
+            return True
+    def support_unit(self, unit1, unit2):
+        tile1 = unit1.tile
+        tile2 = unit2.tile
+
+        if calc_distance(tile1.q, tile1.r, tile1.s, tile2.q, tile2.r, tile2.s) > 1:
+            return False
+
+        if not unit2.alive:
+            return False
+
+        unit2.supporting_units.append(unit1)
+        return True
+
+    def push_chain(self, unit1, unit2):
+        chain = []
+
+        current_tile = unit2.tile
+
+        # Calculating the direction of the push
+        dq = current_tile.q - unit1.tile.q
+        dr = current_tile.r - unit1.tile.r
+        ds = current_tile.s - unit1.tile.s
+
+        # Building chain of tiles
+        while current_tile.unit is not None:
+            unit = current_tile.unit
+            chain.append(unit)
+
+            next_tile = self.board.get_tile_by_coord(
+                current_tile.q + dq,
+                current_tile.r + dr,
+                current_tile.s + ds
+            )
+
+            # Board end
+            if next_tile is None:
+                break
+
+            current_tile = next_tile
+
+        # Checking if the last tile is free
+        can_escape = current_tile.unit is None
+
+        # If there's no space to fall back, the unit dies
+        if not can_escape:
+            unit2.alive = False
+
+        # Moving to the back
+        for unit in reversed(chain):
+            old_tile = unit.tile
+
+            new_tile = self.board.get_tile_by_coord(
+                old_tile.q + dq,
+                old_tile.r + dr,
+                old_tile.s + ds
+            )
+
+            old_tile.unit = None
+            new_tile.unit = unit
+            unit.tile = new_tile
 
         return True
 
@@ -79,7 +275,7 @@ class Simulation:
 
         for unit_id, unit in self.units.items():
             if not unit.alive:
-                self.board.get_tile_by_unit(unit).unit = None
+                unit.tile = None
                 self.units.pop(unit_id)
                 del unit
 
@@ -87,9 +283,9 @@ class Simulation:
 
 
 class Order:
-    def __init__(self, unit_id, unit_action, target_id, move_vec):
-        self.unit_id = unit_id
+    def __init__(self, unit_action, unit_id, target_id=None, move_vec=None):
         self.unit_action = unit_action
+        self.unit_id = unit_id
         self.target_id = target_id
         self.move_vec = move_vec
 
@@ -98,6 +294,7 @@ class Unit:
     def __init__(self, unit_id, owner, movement, upkeep, strength):
         self.unit_id = unit_id
         self.owner = owner
+        self.tile = None
 
         self.movement = movement
         self.upkeep = upkeep
@@ -106,65 +303,6 @@ class Unit:
         self.movement_left = movement
         self.supporting_units = []
         self.alive = True
-
-    def move(self, q_1, r_1, s_1, board):
-        if self.movement_left <= 0:
-            return False
-
-        current_tile = board.get_tile_by_unit(self)
-
-        new_q = current_tile.q+q_1
-        new_r = current_tile.r+r_1
-        new_s = current_tile.s+s_1
-
-        new_tile = board.get_tile_by_coord(new_q, new_r, new_s)
-        if new_tile is None:
-            return False
-
-        if not new_tile.is_available():
-            return False
-
-        new_tile.unit = self
-        current_tile.unit = None
-        self.movement_left -= 1
-
-        return True
-    def attack(self, opponent_tile, board):
-        current_tile = board.get_tile_by_unit(self)
-        opponent_unit = opponent_tile.unit
-
-        if calc_distance(current_tile.q, current_tile.r, current_tile.s, opponent_tile.q, opponent_tile.r, opponent_tile.s) > 1:
-            return False
-
-        if opponent_unit is None:
-            return False
-
-        attack_power = random.randrange(1, self.strength)
-        for _ in self.supporting_units:
-            attack_power += 2
-
-        opponent_unit.defend(attack_power, board)
-        return True
-    def defend(self, attack_power):
-        defend_power = random.randrange(1, self.strength)
-
-        if defend_power >= attack_power:
-            return False
-
-        self.alive = False
-        return True
-    def support(self, ally_tile, board):
-        current_tile = board.get_tile_by_unit(self)
-        ally_unit = ally_tile.unit
-
-        if calc_distance(current_tile.q, current_tile.r, current_tile.s, ally_tile.q, ally_tile.r, ally_tile.s) > 1:
-            return False
-
-        if ally_unit is None:
-            return False
-
-        ally_unit.supporting_units.append(self)
-        return True
 
     def new_round(self):
         self.movement_left = self.movement
@@ -178,41 +316,88 @@ class Tile:
         self.s = s
         self.unit = None
 
-    def is_available(self):
-        return False if self.unit is None else True
-
 class Board:
-    def __init__(self, tiles = None):
+    def __init__(self, tiles=None):
         if tiles is None:
-            self.tiles = []
-            for q in range(5):
-                temp1 = []
-                for r in range(5):
-                    temp2 = []
-                    for s in range(5):
-                        temp2.append(Tile(q, r, s))
-                    temp1.append(temp2)
-                self.tiles.append(temp1)
-
-        else:
-            self.tiles = tiles
+            tiles = {}
+        self.tiles = tiles
 
     def get_tile_by_coord(self, q, r, s):
-        if not validate_coord(q, r, s):
+        if q + r + s != 0:
             return None
 
-        return self.tiles[q][r][s]
-    def get_tile_by_unit(self, unit):
-        for q in range(len(self.tiles)):
-            for r in range(len(self.tiles[q])):
-                for s in range(len(self.tiles[q][r])):
-                    if self.tiles[q][r][s].unit == unit:
-                        return self.tiles[q][r][s]
-        return None
+        return self.tiles.get((q, r, s))
 
+    def get_tiles_in_range(self, center_tile, radius):
+        results = []
 
-def validate_coord(q, r, s):
-    return True if q + r + s == 0 else False
+        for dq in range(-radius, radius + 1):
+            for dr in range(max(-radius, -dq - radius), min(radius, -dq + radius) + 1):
+                ds = -dq - dr
+
+                results.append(self.tiles.get((center_tile.q + dq, center_tile.r + dr, center_tile.s + ds)))
+        return results
+
+    def get_neighbours(self, tile):
+        results = []
+
+        for dq, dr, ds in HEX_DIRECTIONS:
+            neighbour = self.tiles.get((
+                tile.q + dq,
+                tile.r + dr,
+                tile.s + ds
+            ))
+
+            if neighbour is not None:
+                results.append(neighbour)
+        return results
+
+    def find_shortest_path(self, start_tile, end_tile, max_distance):
+        if calc_distance(start_tile.q, start_tile.r, start_tile.s, end_tile.q, end_tile.r, end_tile.s) > max_distance:
+            return None
+
+        queue = deque([start_tile])
+        visited = {start_tile}
+        came_from = {}
+        distance = {
+            start_tile: 0,
+        }
+
+        while queue:
+            current = queue.popleft()
+
+            if current == end_tile:
+                break
+
+            for neighbour in self.get_neighbours(current):
+                if neighbour.unit is not None:
+                    continue
+
+                if neighbour in visited:
+                    continue
+
+                new_distance = distance[current] + 1
+                if new_distance > max_distance:
+                    continue
+
+                visited.add(neighbour)
+                distance[neighbour] = new_distance
+                came_from[neighbour] = current
+
+                queue.append(neighbour)
+
+        if end_tile not in came_from and end_tile != start_tile:
+            return None
+
+        path = [end_tile]
+        current = end_tile
+        while current != start_tile:
+            current = came_from[current]
+            path.append(current)
+
+        path.reverse()
+        return path
+
 
 def calc_distance(q_1, r_1, s_1, q_2, r_2, s_2):
     return (abs(q_1 - q_2) + abs(r_1 - r_2) + abs(s_1 - s_2)) / 2
