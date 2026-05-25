@@ -243,6 +243,13 @@ class Simulation:
 
         return True
 
+    # OBSERVATION ACTIONS
+    def observe_unit(self, unit_id):
+        unit = self.units[unit_id]
+        return self.board.get_tiles_in_range(unit.tile, 3)
+    def observe_region(self, region_id):
+        return self.board.regions[region_id]
+
     # UNIT ACTIONS
     def move_unit(self, unit, dq, dr, ds):
         if unit.movement_left <= 0:

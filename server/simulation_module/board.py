@@ -14,6 +14,7 @@ class Board:
         if tiles is None:
             tiles = {}
         self.tiles = tiles
+        self.regions = {}
 
     def get_tile_by_coord(self, q, r, s):
         if q + r + s != 0:
