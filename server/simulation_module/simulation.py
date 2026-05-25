@@ -1,14 +1,9 @@
 import random
-from collections import deque
-
-HEX_DIRECTIONS = [
-    (1, -1, 0),
-    (1, 0, -1),
-    (0, 1, -1),
-    (-1, 1, 0),
-    (-1, 0, 1),
-    (0, -1, 1)
-]
+from board import Board
+from unit import Unit
+from action import Action
+from tile import Tile
+from utils import calc_distance
 
 class Simulation:
     def __init__(self, players):
@@ -17,6 +12,7 @@ class Simulation:
         self.players_actions = {}
         self.units = {}
         self.occupancy = {}
+        self.simulated_occupancy = {}
         self.board = Board()
 
         self.new_unit_id = 0
@@ -24,6 +20,7 @@ class Simulation:
     # TURN MANAGEMENT
     def end_round(self):
         self.occupancy = {}
+        self.simulated_occupancy = {}
 
         # Executing players actions
         self.execute_player_actions()
@@ -90,8 +87,6 @@ class Simulation:
 
     def expand_movement_actions(self, action_list):
         result = []
-        moved_units = {}
-        simulated_occupancy = self.occupancy.copy()
 
         for action in action_list:
             dq, dr, ds = action.move_vec
@@ -99,7 +94,7 @@ class Simulation:
             unit_tile = unit.tile
             target_tile = self.board.get_tile_by_coord(unit_tile.q + dq, unit_tile.r + dr, unit_tile.s + ds)
 
-            path = self.board.find_shortest_path(unit_tile, target_tile, unit.movement_left, simulated_occupancy)
+            path = self.board.find_shortest_path(unit_tile, target_tile, unit.movement_left, self.simulated_occupancy)
 
             if path is None:
                 return False
@@ -109,12 +104,10 @@ class Simulation:
                 result.append(Action("Move", action.unit_id, move_vec=move_vec))
 
             # Update simulated occupancy
-            del simulated_occupancy[(unit_tile.q, unit_tile.r, unit_tile.s)]
-            simulated_occupancy[(target_tile.q, target_tile.r, target_tile.s)] = unit
+            del self.simulated_occupancy[(unit_tile.q, unit_tile.r, unit_tile.s)]
+            self.simulated_occupancy[(target_tile.q, target_tile.r, target_tile.s)] = unit
 
-            # Register moved unit to check later
-            moved_units[action.unit_id] = target_tile
-        return result, moved_units
+        return result
     def split_actions(self, action_list):
         movement_actions = []
         support_actions = []
@@ -145,19 +138,22 @@ class Simulation:
                 return False
 
         return True
-    def verify_action_range(self, action_list, moved_units):
+    def verify_action_range(self, action_list):
         for action in action_list:
-            unit_tile = self.units[action.unit_id].tile
-            if action.target_id in moved_units.keys():
-                target_tile = moved_units[action.target_id]
-            else:
-                target_tile = self.units[action.target_id].tile
+            unit = self.units[action.unit_id]
+            target_unit = self.units[action.target_id]
 
-            if calc_distance(unit_tile.q, unit_tile.r, unit_tile.s, target_tile.q, target_tile.r, target_tile.s) > 1:
+            unit_q, unit_r, unit_s = [key for key, val in self.simulated_occupancy.items() if val == unit]
+            target_q, target_r, target_s = [key for key, val in self.simulated_occupancy.items() if val == target_unit]
+
+            if calc_distance(unit_q, unit_r, unit_s, target_q, target_r, target_s) > 1:
                 return False
         return True
 
     def process_action_list(self, player, action_list):
+        # We create simulated occupancy to predict future unit positions
+        self.simulated_occupancy = self.occupancy.copy()
+
         # Check if every unit received up to 1 action
         if not self.verify_action_uniqueness(action_list):
             return False
@@ -170,16 +166,16 @@ class Simulation:
         movement_actions, support_actions, attack_actions = self.split_actions(action_list)
 
         # Expand movement actions into separate moves
-        expanded_movement_actions, moved_units = self.expand_movement_actions(movement_actions)
+        expanded_movement_actions = self.expand_movement_actions(movement_actions)
         if expanded_movement_actions is False:
             return False
 
         # Removing impossible support actions
-        if not self.verify_action_range(support_actions, moved_units):
+        if not self.verify_action_range(support_actions):
             return False
 
         # Removing impossible attack actions
-        if not self.verify_action_range(attack_actions, moved_units):
+        if not self.verify_action_range(attack_actions):
             return False
 
         return expanded_movement_actions, support_actions, attack_actions
@@ -362,122 +358,3 @@ class Simulation:
             unit.tile = new_tile
 
         return True
-
-
-class Action:
-    def __init__(self, unit_action, unit_id, target_id=None, move_vec=None):
-        self.unit_action = unit_action
-        self.unit_id = unit_id
-        self.target_id = target_id
-        self.move_vec = move_vec
-
-class Unit:
-    def __init__(self, unit_id, owner, movement, upkeep, strength):
-        self.unit_id = unit_id
-        self.owner = owner
-        self.tile = None
-
-        self.movement = movement
-        self.upkeep = upkeep
-        self.strength = strength
-
-        self.movement_left = movement
-        self.supporting_units = []
-        self.alive = True
-
-    def new_round(self):
-        self.movement_left = self.movement
-        self.supporting_units = []
-
-class Tile:
-    def __init__(self, q, r, s):
-        self.q = q
-        self.r = r
-        self.s = s
-        self.unit = None
-
-class Board:
-    def __init__(self, tiles=None):
-        if tiles is None:
-            tiles = {}
-        self.tiles = tiles
-
-    def get_tile_by_coord(self, q, r, s):
-        if q + r + s != 0:
-            return None
-
-        return self.tiles.get((q, r, s))
-
-    def get_tiles_in_range(self, center_tile, radius):
-        results = []
-
-        for dq in range(-radius, radius + 1):
-            for dr in range(max(-radius, -dq - radius), min(radius, -dq + radius) + 1):
-                ds = -dq - dr
-
-                results.append(self.tiles.get((center_tile.q + dq, center_tile.r + dr, center_tile.s + ds)))
-        return results
-
-    def get_neighbours(self, tile):
-        results = []
-
-        for dq, dr, ds in HEX_DIRECTIONS:
-            neighbour = self.tiles.get((
-                tile.q + dq,
-                tile.r + dr,
-                tile.s + ds
-            ))
-
-            if neighbour is not None:
-                results.append(neighbour)
-        return results
-
-    def find_shortest_path(self, start_tile, end_tile, max_distance, occupancy):
-        if calc_distance(start_tile.q, start_tile.r, start_tile.s, end_tile.q, end_tile.r, end_tile.s) > max_distance:
-            return None
-
-        queue = deque([start_tile])
-        visited = {start_tile}
-        came_from = {}
-        distance = {
-            start_tile: 0,
-        }
-
-        while queue:
-            current = queue.popleft()
-
-            if current == end_tile:
-                break
-
-            for neighbour in self.get_neighbours(current):
-                if occupancy.get((neighbour.q, neighbour.r, neighbour.s)) is not None:
-                    continue
-
-                if neighbour in visited:
-                    continue
-
-                new_distance = distance[current] + 1
-                if new_distance > max_distance:
-                    continue
-
-                visited.add(neighbour)
-                distance[neighbour] = new_distance
-                came_from[neighbour] = current
-
-                queue.append(neighbour)
-
-        if end_tile not in came_from and end_tile != start_tile:
-            return None
-
-        path = [end_tile]
-        current = end_tile
-        while current != start_tile:
-            current = came_from[current]
-            path.append(current)
-
-        path.reverse()
-        return path
-
-
-def calc_distance(q_1, r_1, s_1, q_2, r_2, s_2):
-    return (abs(q_1 - q_2) + abs(r_1 - r_2) + abs(s_1 - s_2)) / 2
