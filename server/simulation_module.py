@@ -16,20 +16,106 @@ class Simulation:
 
         self.players_actions = {}
         self.units = {}
+        self.occupancy = {}
         self.board = Board()
 
         self.new_unit_id = 0
 
-    def add_player_actions(self, owner, action_list):
-        movement_actions, support_actions, attack_actions = self.process_actions(action_list)
+    # TURN MANAGEMENT
+    def end_round(self):
+        self.occupancy = {}
+
+        # Executing players actions
+        self.execute_player_actions()
+        self.players_actions = {}
+
+        # Removing dead units
+        dead_units = []
+        for unit_id, unit in self.units.items():
+            if not unit.alive:
+                dead_units.append(unit_id)
+            else:
+                self.occupancy[(unit.tile.q, unit.tile.r, unit.tile.s)] = unit
+
+        for unit_id in dead_units:
+            self.units[unit_id].tile = None
+            del self.units[unit_id]
+
+    # PROCESSING PLAYER ACTIONS
+    def add_player_actions(self, player, action_list):
+        movement_actions, support_actions, attack_actions = self.process_action_list(player, action_list)
         if movement_actions is None:
             return False
 
-        self.players_actions[owner] = (movement_actions, support_actions, attack_actions)
+        self.players_actions[player] = (movement_actions, support_actions, attack_actions)
         return True
+    def execute_action(self, action):
+        unit = self.units[action.unit_id]
 
-    def process_actions(self, action_list):
-        # Divide actions into categories: Movement, Support, Attack
+        if action.unit_action == "Hold":
+            return True
+
+        if action.unit_action == "Move":
+            q, r, s = action.move_vec
+            return self.move_unit(unit, q, r, s)
+
+        target_unit = self.units[action.target_id]
+
+        if action.unit_action == "Attack":
+            return self.attack_unit(unit, target_unit)
+
+        if action.unit_action == "Support":
+            return self.support_unit(unit, target_unit)
+
+        return False
+    def execute_player_actions(self):
+        # Choosing random order of players
+        player_order = [i for i in range(len(self.players))]
+        random.shuffle(player_order)
+
+        # Creating global order of player actions
+        all_movement_orders = []
+        all_support_orders = []
+        all_attack_orders = []
+        for player_id in player_order:
+            movement_actions, support_actions, attack_actions = self.players_actions[player_id]
+
+            all_movement_orders.append(movement_actions)
+            all_support_orders.append(support_actions)
+            all_attack_orders.append(attack_actions)
+
+        all_actions = all_movement_orders + all_support_orders + all_attack_orders
+        for action in all_actions:
+            self.execute_action(action)
+
+    def expand_movement_actions(self, action_list):
+        result = []
+        moved_units = {}
+        simulated_occupancy = self.occupancy.copy()
+
+        for action in action_list:
+            dq, dr, ds = action.move_vec
+            unit = self.units[action.unit_id]
+            unit_tile = unit.tile
+            target_tile = self.board.get_tile_by_coord(unit_tile.q + dq, unit_tile.r + dr, unit_tile.s + ds)
+
+            path = self.board.find_shortest_path(unit_tile, target_tile, unit.movement_left, simulated_occupancy)
+
+            if path is None:
+                return False
+
+            for i in range(0, len(path)-1):
+                move_vec = (path[i+1].q - path[i].q, path[i+1].r - path[i].r, path[i+1].s - path[i].s)
+                result.append(Action("Move", action.unit_id, move_vec=move_vec))
+
+            # Update simulated occupancy
+            del simulated_occupancy[(unit_tile.q, unit_tile.r, unit_tile.s)]
+            simulated_occupancy[(target_tile.q, target_tile.r, target_tile.s)] = unit
+
+            # Register moved unit to check later
+            moved_units[action.unit_id] = target_tile
+        return result, moved_units
+    def split_actions(self, action_list):
         movement_actions = []
         support_actions = []
         attack_actions = []
@@ -42,61 +128,61 @@ class Simulation:
             elif action.unit_action == "Attack":
                 attack_actions.append(action)
 
-        # Expand movement actions into separate moves
-        expanded_movement_actions = []
-        for action in movement_actions:
-            dq, dr, ds = action.move_vec
-            unit = self.units[action.unit_id]
-            unit_tile = unit.tile
-            target_tile = self.board.get_tile_by_coord(unit_tile.q + dq, unit_tile.r + dr, unit_tile.s + ds)
-
-            path = self.board.find_shortest_path(unit_tile, target_tile, unit.movement_left)
-
-            if path is None:
-                return None, None, None
-            else:
-                for i in range(0, len(path)-1):
-                    move_vec = (path[i+1].q - path[i].q, path[i+1].r - path[i].r, path[i+1].s + path[i].s)
-                    expanded_movement_actions.append(Order("Move", action.unit_id, move_vec=move_vec))
-        movement_actions = expanded_movement_actions
-
-        # Removing impossible support actions
-        for action in support_actions:
-            unit_tile = self.units[action.unit_id].tile
-            target_tile = self.units[action.target_id].tile
-
-            if calc_distance(unit_tile.q, unit_tile.r, unit_tile.s, target_tile.q, target_tile.r, target_tile.s) > 1:
-                return None, None, None
-
-        # Removing impossible attack actions
-        for action in attack_actions:
-            unit_tile = self.units[action.unit_id].tile
-            target_tile = self.units[action.target_id].tile
-
-            if calc_distance(unit_tile.q, unit_tile.r, unit_tile.s, target_tile.q, target_tile.r, target_tile.s) > 1:
-                return None, None, None
-
         return movement_actions, support_actions, attack_actions
 
-    def execute_action(self, order):
-        unit = self.units[order.unit_id]
+    def verify_action_uniqueness(self, action_list):
+        units_id = set()
+        for action in action_list:
+            if action.unit_id in units_id:
+                return False
+            else:
+                units_id.add(action.unit_id)
+        return True
+    def verify_unit_ownership(self, player, action_list):
+        for action in action_list:
+            unit = self.units[action.unit_id]
+            if unit.owner != player:
+                return False
 
-        if order.unit_action == "Hold":
-            return True
+        return True
+    def verify_action_range(self, action_list, moved_units):
+        for action in action_list:
+            unit_tile = self.units[action.unit_id].tile
+            if action.target_id in moved_units.keys():
+                target_tile = moved_units[action.target_id]
+            else:
+                target_tile = self.units[action.target_id].tile
 
-        if order.unit_action == "Move":
-            q, r, s = order.move_vec
-            return self.move_unit(unit, q, r, s)
+            if calc_distance(unit_tile.q, unit_tile.r, unit_tile.s, target_tile.q, target_tile.r, target_tile.s) > 1:
+                return False
+        return True
 
-        target_unit = self.units[order.target_id]
+    def process_action_list(self, player, action_list):
+        # Check if every unit received up to 1 action
+        if not self.verify_action_uniqueness(action_list):
+            return False
 
-        if order.unit_action == "Attack":
-            return self.attack_unit(unit, target_unit)
+        # Check if every ordered unit is owned by the player
+        if not self.verify_unit_ownership(player, action_list):
+            return False
 
-        if order.unit_action == "Support":
-            return self.support_unit(unit, target_unit)
+        # Divide actions into categories: Movement, Support, Attack
+        movement_actions, support_actions, attack_actions = self.split_actions(action_list)
 
-        return False
+        # Expand movement actions into separate moves
+        expanded_movement_actions, moved_units = self.expand_movement_actions(movement_actions)
+        if expanded_movement_actions is False:
+            return False
+
+        # Removing impossible support actions
+        if not self.verify_action_range(support_actions, moved_units):
+            return False
+
+        # Removing impossible attack actions
+        if not self.verify_action_range(attack_actions, moved_units):
+            return False
+
+        return expanded_movement_actions, support_actions, attack_actions
 
     # GENERATING BOARD
     def create_empty_board(self, q_range, r_range, s_range):
@@ -122,6 +208,9 @@ class Simulation:
         self.units.update({self.new_unit_id: light_infantry})
         self.new_unit_id += 1
 
+        # Adding to the occupancy new unit
+        self.occupancy[(tile.q, tile.r, tile.s)] = light_infantry
+
         return True
     def add_heavy_infantry(self, owner, q, r, s):
         tile = self.board.get_tile_by_coord(q, r, s)
@@ -136,6 +225,9 @@ class Simulation:
         self.units.update({self.new_unit_id: heavy_infantry})
         self.new_unit_id += 1
 
+        # Adding to the occupancy new unit
+        self.occupancy[(tile.q, tile.r, tile.s)] = heavy_infantry
+
         return True
     def add_cavalry(self, owner, q, r, s):
         tile = self.board.get_tile_by_coord(q, r, s)
@@ -149,6 +241,9 @@ class Simulation:
 
         self.units.update({self.new_unit_id: cavalry})
         self.new_unit_id += 1
+
+        # Adding to the occupancy new unit
+        self.occupancy[(tile.q, tile.r, tile.s)] = cavalry
 
         return True
 
@@ -268,27 +363,13 @@ class Simulation:
 
         return True
 
-    def end_round(self):
-        for player_actions in self.players_actions.values():
-            for action in player_actions:
-                self.execute_action(action)
 
-        for unit_id, unit in self.units.items():
-            if not unit.alive:
-                unit.tile = None
-                self.units.pop(unit_id)
-                del unit
-
-        self.players_actions = {}
-
-
-class Order:
+class Action:
     def __init__(self, unit_action, unit_id, target_id=None, move_vec=None):
         self.unit_action = unit_action
         self.unit_id = unit_id
         self.target_id = target_id
         self.move_vec = move_vec
-
 
 class Unit:
     def __init__(self, unit_id, owner, movement, upkeep, strength):
@@ -307,7 +388,6 @@ class Unit:
     def new_round(self):
         self.movement_left = self.movement
         self.supporting_units = []
-
 
 class Tile:
     def __init__(self, q, r, s):
@@ -352,7 +432,7 @@ class Board:
                 results.append(neighbour)
         return results
 
-    def find_shortest_path(self, start_tile, end_tile, max_distance):
+    def find_shortest_path(self, start_tile, end_tile, max_distance, occupancy):
         if calc_distance(start_tile.q, start_tile.r, start_tile.s, end_tile.q, end_tile.r, end_tile.s) > max_distance:
             return None
 
@@ -370,7 +450,7 @@ class Board:
                 break
 
             for neighbour in self.get_neighbours(current):
-                if neighbour.unit is not None:
+                if occupancy.get((neighbour.q, neighbour.r, neighbour.s)) is not None:
                     continue
 
                 if neighbour in visited:
