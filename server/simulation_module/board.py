@@ -1,5 +1,7 @@
 from collections import deque
 
+from simulation_module.utils import calc_distance
+
 HEX_DIRECTIONS = [
     (1, -1, 0),
     (1, 0, -1),

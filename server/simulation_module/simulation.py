@@ -1,9 +1,9 @@
 import random
-from board import Board
-from unit import Unit
-from action import Action
-from tile import Tile
-from utils import calc_distance
+from simulation_module.board import Board
+from simulation_module.unit import Unit
+from simulation_module.action import Action
+from simulation_module.tile import Tile
+from simulation_module.utils import calc_distance
 
 class Simulation:
     def __init__(self, players):

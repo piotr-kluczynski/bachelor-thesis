@@ -1,12 +1,18 @@
+import tkinter as tk
+from display_module.gui.simulation.simulation_screen import SimulationScreen
 from simulation_module.simulation import Simulation
-from simulation_module.action import Action
 
 if __name__ == '__main__':
-    simulation = Simulation([0, 1])
-    simulation.create_empty_board(3, 3, 3)
-    simulation.add_heavy_infantry(0, 0, 0, 0)
-    simulation.add_light_infantry(1, -1, 1, 0)
+    simulation = Simulation([0])
+    simulation.create_empty_board(9, 9, 9)
 
-    player0_orders = [Action("Attack", 0, 1, None)]
-    simulation.add_player_actions(0, player0_orders)
-    simulation.end_round()
+    root = tk.Tk()
+
+    root.title("Simulation")
+    root.geometry("1280x720")
+    root.minsize(900, 500)
+
+    screen = SimulationScreen(root, simulation.board)
+    screen.pack(fill="both", expand=True)
+
+    root.mainloop()
