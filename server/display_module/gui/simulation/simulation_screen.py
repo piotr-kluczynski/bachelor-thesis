@@ -35,7 +35,7 @@ class SimulationScreen(tk.Frame):
             sticky="nsew"
         )
 
-        self.content.grid_columnconfigure(0, weight=3)
+        self.content.grid_columnconfigure(0, weight=1)
         self.content.grid_columnconfigure(1, weight=1)
 
         self.content.grid_rowconfigure(0, weight=1)
