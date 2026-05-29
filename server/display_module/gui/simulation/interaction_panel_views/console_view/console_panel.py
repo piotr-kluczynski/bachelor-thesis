@@ -8,23 +8,6 @@ class ConsolePanel(tk.Frame):
         self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        # Header
-        self.header = tk.Label(
-            self,
-            text="Console",
-            bg="#2a2a2a",
-            fg="white",
-            anchor="w",
-            padx=10,
-            font=("Arial", 16)
-        )
-
-        self.header.grid(
-            row=0,
-            column=0,
-            sticky="ew"
-        )
-
         # Message area
         self.commands = tk.Text(
             self,

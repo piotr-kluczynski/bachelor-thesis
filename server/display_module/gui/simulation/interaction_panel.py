@@ -1,10 +1,10 @@
 import tkinter as tk
 
-from display_module.gui.simulation.interaction_panel_views.console_view import ConsoleView
-from display_module.gui.simulation.interaction_panel_views.conversation_view import ConversationView
-from display_module.gui.simulation.interaction_panel_views.gamestate_view import GamestateView
-from display_module.gui.simulation.interaction_panel_views.notifications_view import NotificationsView
-from display_module.gui.simulation.interaction_panel_views.orders_view import OrdersView
+from display_module.gui.simulation.interaction_panel_views.console_view.console_view import ConsoleView
+from display_module.gui.simulation.interaction_panel_views.conversation_view.conversation_view import ConversationView
+from display_module.gui.simulation.interaction_panel_views.gamestate_view.gamestate_view import GamestateView
+from display_module.gui.simulation.interaction_panel_views.notifications_view.notifications_view import NotificationsView
+from display_module.gui.simulation.interaction_panel_views.orders_view.orders_view import OrdersView
 
 class InteractionPanel(tk.Frame):
     def __init__(self, parent):

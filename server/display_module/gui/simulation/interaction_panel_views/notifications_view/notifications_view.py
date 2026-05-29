@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from display_module.gui.simulation.interaction_panel_views.notification_card import NotificationCard
+from display_module.gui.simulation.interaction_panel_views.notifications_view.notification_card import NotificationCard
 
 
 class NotificationsView(tk.Frame):
