@@ -4,13 +4,15 @@ from display_module.gui.simulation.interaction_panel_views.console_view.console_
 from display_module.gui.simulation.interaction_panel_views.conversation_view.conversation_view import ConversationView
 from display_module.gui.simulation.interaction_panel_views.gamestate_view.gamestate_view import GamestateView
 from display_module.gui.simulation.interaction_panel_views.notifications_view.notifications_view import NotificationsView
-from display_module.gui.simulation.interaction_panel_views.orders_view.actions_view import ActionsView
+from display_module.gui.simulation.interaction_panel_views.actions_view.actions_view import ActionsView
 
 class InteractionPanel(tk.Frame):
     def __init__(self, parent, context):
         super().__init__(parent, bg="#2f2f2f", width=300)
 
         self.context = context
+
+        self.grid_propagate(False)
 
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
@@ -34,7 +36,7 @@ class InteractionPanel(tk.Frame):
             "conversation": ConversationView(self.content, self.context),
             "gamestate": GamestateView(self.content, self.context),
             "notifications": NotificationsView(self.content, self.context),
-            "orders": ActionsView(self.content, self.context)
+            "actions": ActionsView(self.content, self.context)
         }
 
         for view in self.views.values():
@@ -45,7 +47,7 @@ class InteractionPanel(tk.Frame):
         self.create_tab_button("Conversation", "conversation")
         self.create_tab_button("Gamestate", "gamestate")
         self.create_tab_button("Notifications", "notifications")
-        self.create_tab_button("Orders", "orders")
+        self.create_tab_button("Actions", "actions")
 
     def create_tab_button(self, text, view_name):
         btn = tk.Button(

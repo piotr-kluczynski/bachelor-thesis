@@ -65,8 +65,6 @@ class ConversationView(tk.Frame):
             sticky="nsew"
         )
 
-        self.contacts_panel.grid_propagate(False)
-
         # Chat panel
         self.chat_panel = ChatPanel(content, self.context)
 
@@ -83,14 +81,16 @@ class ConversationView(tk.Frame):
 
     def create_contact_buttons(self):
         for player in self.players:
+            if player[0] is self.context.my_id:
+                continue
             btn = tk.Button(
                 self.contacts_panel,
-                text=player,
+                text=player[1], # Player Name
                 anchor="w",
                 relief="flat",
                 bg="#333333",
-                fg="white",
-                command=lambda player=player: self.open_chat(player)
+                fg=self.context.players_colors[player[0]],
+                command=lambda playerId=player[0]: self.open_chat(playerId)
             )
 
             btn.pack(

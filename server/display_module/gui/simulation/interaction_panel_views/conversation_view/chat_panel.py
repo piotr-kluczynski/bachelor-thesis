@@ -8,7 +8,7 @@ class ChatPanel(tk.Frame):
         super().__init__(parent, bg="#3a3a3a")
 
         self.context = context
-        self.current_player = context.player_ids[0]
+        self.current_player = context.players_ids[0]
 
         # Main grid
         self.grid_rowconfigure(1, weight=1)
@@ -63,7 +63,8 @@ class ChatPanel(tk.Frame):
         self.messages.delete("1.0", tk.END)
 
         for msg in conversation:
-            self.messages.insert(tk.END, f"({msg.sender}) {msg.content}\n")
+            sender_name = self.context.players_names.get(msg.sender)
+            self.messages.insert(tk.END, f"({sender_name}) {msg.content}\n")
         self.messages.config(state="disabled")
 
     def send_message(self):
@@ -72,6 +73,12 @@ class ChatPanel(tk.Frame):
         if not text:
             return
 
+        if self.current_player is self.context.my_id:
+            return
+
         message = Message(sender=self.context.my_id, recipient=self.current_player, content=text)
         self.context.send_message(message)
-        self.load_conversation(message.sender)
+        self.load_conversation(message.recipient)
+
+        # Clearing entry
+        self.input.delete(0, tk.END)

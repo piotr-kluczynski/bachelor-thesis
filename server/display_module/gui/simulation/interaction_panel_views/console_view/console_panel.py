@@ -53,14 +53,13 @@ class ConsolePanel(tk.Frame):
         self.load_console()
 
     def load_console(self):
-        # Hardcoded command history
         history = self.context.console_content
 
         self.commands.config(state="normal")
         self.commands.delete("1.0", tk.END)
 
         for command in history:
-            self.commands.insert(tk.END, command + "\n")
+            self.commands.insert(tk.END, command)
         self.commands.config(state="disabled")
 
     def send_command(self):
@@ -71,3 +70,6 @@ class ConsolePanel(tk.Frame):
 
         self.context.execute_command(text)
         self.load_console()
+
+        # Clearing entry
+        self.input.delete(0, tk.END)

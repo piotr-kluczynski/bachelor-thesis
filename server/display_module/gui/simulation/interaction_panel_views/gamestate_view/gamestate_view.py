@@ -164,10 +164,11 @@ class GamestateView(tk.Frame):
     def refresh_region_list(self):
         for widget in self.region_list.winfo_children():
             widget.destroy()
-        for region_name in self.context.regions.items():
+        for region in self.context.regions.items():
             card = RegionCard(
                 self.region_list,
-                region_name
+                self.context,
+                region
             )
 
             card.pack(
@@ -180,12 +181,13 @@ class GamestateView(tk.Frame):
         for widget in self.units_list.winfo_children():
             widget.destroy()
 
-        units = [unit for unit in self.context.units if unit.owner == self.context.my_id]
+        units = [unit[1] for unit in self.context.units.items() if unit[1].owner == self.context.my_id]
 
         for unit in units:
             card = UnitCard(
                 self.units_list,
-                unit.unit_id
+                self.context,
+                unit
             )
             card.pack(
                 fill="x",

@@ -1,6 +1,8 @@
 import math
 import tkinter as tk
 
+from display_module.gui.simulation.unit_info_panel import UnitInfoPanel
+
 HEX_SIZE = 40
 
 class BoardPanel(tk.Frame):
@@ -8,14 +10,35 @@ class BoardPanel(tk.Frame):
         super().__init__(parent, bg="#3a3a3a")
 
         self.context = context
-        self.board = context.board
+        self.context.board_panel = self # Assign self as a reference - possibly look for better solutions later
 
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=0)
+
+        self.grid_columnconfigure(0, weight=1)
+
+        self.unit_items = {}
+
+        # Board
         self.canvas = tk.Canvas(
             self,
             bg="#222222"
         )
 
-        self.canvas.pack(fill="both", expand=True)
+        self.canvas.grid(
+           row=0,
+           column=0,
+            sticky="nsew"
+        )
+
+        # Unit information panel
+        self.unit_info_panel = UnitInfoPanel(self, self.context)
+        self.unit_info_panel.grid(
+            row=1,
+            column=0,
+            sticky="ew"
+        )
+        self.unit_info_panel.grid_remove()
 
         # MAPPING
         # canvas_id -> coordinates
@@ -25,6 +48,7 @@ class BoardPanel(tk.Frame):
         self.coord_items = {}
 
         self.draw_board()
+        self.draw_units()
 
         self.canvas.config(
             scrollregion=self.canvas.bbox("all")
@@ -64,7 +88,7 @@ class BoardPanel(tk.Frame):
         return points
 
     def draw_board(self):
-        for (q, r, s), tile in self.game_board.tiles.items():
+        for (q, r, s), tile in self.context.board.tiles.items():
             center_x, center_y = self.hex_to_pixel(q, r)
             points = self.get_hex_points(center_x, center_y)
             color = "white"
@@ -97,6 +121,30 @@ class BoardPanel(tk.Frame):
                 self.on_hex_hover_leave
             )
 
+    def draw_units(self):
+        for unit_id, unit in self.context.units.items():
+            q, r, s = unit.tile.q, unit.tile.r, unit.tile.s
+
+            radius = HEX_SIZE * 0.5
+            color = self.context.players_colors.get(unit.owner)
+            center_x, center_y = self.hex_to_pixel(q, r)
+
+            unit_canvas_id = self.canvas.create_oval(
+                center_x - radius,
+                center_y - radius,
+                center_x + radius,
+                center_y + radius,
+                fill=color
+            )
+
+            self.canvas.tag_bind(
+                unit_canvas_id,
+                "<Button-1>",
+                self.on_unit_click
+            )
+
+            self.unit_items[unit_canvas_id] = unit
+
     def center_camera_on(self, q, r):
 
         x, y = self.hex_to_pixel(q, r)
@@ -122,12 +170,18 @@ class BoardPanel(tk.Frame):
 
         self.canvas.xview_moveto(x_fraction)
         self.canvas.yview_moveto(y_fraction)
+    def show_unit_info(self, unit):
+        self.unit_info_panel.set_data(unit)
+        self.unit_info_panel.grid()
 
     # Event handlers
     def on_hex_click(self, event):
         item = self.canvas.find_withtag("current")[0]
         coords = self.hex_items[item]
         print("Clicked:", coords)
+
+        # Hiding unit description
+        self.unit_info_panel.grid_remove()
     def on_hex_hover_enter(self, event):
         item = self.canvas.find_withtag("current")[0]
         self.canvas.itemconfig(
@@ -141,3 +195,8 @@ class BoardPanel(tk.Frame):
             item,
             width=2
         )
+    def on_unit_click(self, event):
+        item = self.canvas.find_withtag("current")[0]
+        unit = self.unit_items[item]
+
+        self.show_unit_info(unit)

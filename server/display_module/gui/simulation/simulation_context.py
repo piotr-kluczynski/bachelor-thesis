@@ -2,18 +2,20 @@ from simulation_module.action import Action
 
 
 class SimulationContext:
-    def __init__(self, my_id, manager):
-        self.manager = manager # Reference to the Management object
+    def __init__(self, simulation): # Temporarily passing simulation reference for development
+        #self.manager = manager # Reference to the Management object
+        self.board_panel = None # Board panel reference, possibly replace with better solution access board_panel
 
-        self.my_id = my_id # Current user id
+        self.my_id = 0 # Current user id
 
-        self.player_ids = [] # Array of player ids
+        self.players_ids = [] # Array of player ids
         self.players_names = {} # Dictionary (player_id : playerName)
         self.players_status = {} # Dictionary (player_id : playerStatus)
+        self.player_colors = {} # Dictionary (player_id : playerColor)
 
-        self.board = {} # Board object
+        self.board = simulation.board # {} Board object
         self.regions = {} # Dictionary ((q, r, s) : region_name)
-        self.units = [] # Array of Unit objects
+        self.units = simulation.units # []  Array of Unit objects
         self.simulated_occupancy = {} # Dictionary ((q, r, s) : Unit)
 
         self.current_round = 0
@@ -27,6 +29,23 @@ class SimulationContext:
 
         self.actions = [] # Array of Action objects
 
+        self.initialize()
+
+    # Hard-coded function for creating the initial data
+    def initialize(self):
+        self.players_ids = [0, 1, 2, 3, 4]
+        self.players_names = {0: "Piotr", 1: "Alex", 2: "Bob", 3: "Martin", 4: "Eva"}
+        self.players_status = {0: "Online", 1: "Online", 2: "Online", 3: "Online", 4: "Online"}
+        self.players_colors = {0: "green", 1: "blue", 2: "red", 3: "yellow", 4: "purple"}
+
+        self.regions = {(0, 0, 0): "Central region"}
+
+        self.current_round = 1
+        self.max_round = 50
+
+        self.conversations = {1 : [], 2 : [], 3 : [], 4 : []}
+
+
     def execute_command(self, command):
         self.console_content.append(f">{command}\r\n")
         # Just return "Unknown command error"
@@ -34,7 +53,7 @@ class SimulationContext:
 
     def send_message(self, message):
         # Just add message to the conversation
-        self.conversations[message.recipient] = message
+        self.conversations[message.recipient].append(message)
 
     def add_action(self, unit_action, unit_id, target_id=None, move_vec=None):
         action = Action(unit_action, unit_id, target_id, move_vec)
@@ -43,3 +62,7 @@ class SimulationContext:
     def remove_action(self, action_id):
         # Just remove the action from the list
         self.actions.remove(self.actions[action_id])
+
+    def center_camera_on(self, q, r):
+        if self.board_panel is not None:
+            self.board_panel.center_camera_on(q, r)

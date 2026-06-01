@@ -197,11 +197,11 @@ class Simulation:
         if tile.unit is not None:
             return False
 
-        light_infantry = Unit(self.new_unit_id, owner, 2, 1, 6)
+        light_infantry = Unit(f"light_infantry_{self.new_unit_id}", owner, 2, 1, 6)
         tile.unit = light_infantry
         light_infantry.tile = tile
 
-        self.units.update({self.new_unit_id: light_infantry})
+        self.units.update({f"light_infantry_{self.new_unit_id}": light_infantry})
         self.new_unit_id += 1
 
         # Adding to the occupancy new unit
@@ -214,11 +214,11 @@ class Simulation:
         if tile.unit is not None:
             return False
 
-        heavy_infantry = Unit(self.new_unit_id, owner, 1, 2, 8)
+        heavy_infantry = Unit(f"heavy_infantry_{self.new_unit_id}", owner, 1, 2, 8)
         tile.unit = heavy_infantry
         heavy_infantry.tile = tile
 
-        self.units.update({self.new_unit_id: heavy_infantry})
+        self.units.update({f"heavy_infantry_{self.new_unit_id}": heavy_infantry})
         self.new_unit_id += 1
 
         # Adding to the occupancy new unit
@@ -231,11 +231,11 @@ class Simulation:
         if tile.unit is not None:
             return False
 
-        cavalry = Unit(self.new_unit_id, owner, 3, 3, 6)
+        cavalry = Unit(f"cavalry_{self.new_unit_id}", owner, 3, 3, 6)
         tile.unit = cavalry
         cavalry.tile = tile
 
-        self.units.update({self.new_unit_id: cavalry})
+        self.units.update({f"cavalry_{self.new_unit_id}": cavalry})
         self.new_unit_id += 1
 
         # Adding to the occupancy new unit
