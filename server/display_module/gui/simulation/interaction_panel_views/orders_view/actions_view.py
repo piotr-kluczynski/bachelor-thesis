@@ -1,17 +1,11 @@
 import tkinter as tk
-from display_module.gui.simulation.interaction_panel_views.orders_view.order_card import OrderCard
+from display_module.gui.simulation.interaction_panel_views.orders_view.action_card import ActionCard
 
-class OrdersView(tk.Frame):
-    def __init__(self, parent):
+class ActionsView(tk.Frame):
+    def __init__(self, parent, context):
         super().__init__(parent, bg="#3b3b3b")
 
-        # Hard-coded order list
-        self.orders = [
-            (0, "Attack", "light_infantry23", "cavalry7"),
-            (1, "Move", "cavalry4", "(-8, 9, -1)"),
-            (2, "Move", "cavalry8", "(-2, 1, 1)"),
-            (3, "Attack", "heavy_infantry10", "light_infantry12")
-        ]
+        self.context = context
 
         # Main layout
         self.grid_columnconfigure(0, weight=1)
@@ -22,7 +16,7 @@ class OrdersView(tk.Frame):
         # Header
         self.header = tk.Label(
             self,
-            text="Orders",
+            text="Actions",
             font=("Arial", 20),
             bg="#2a2a2a",
             fg="white",
@@ -79,27 +73,27 @@ class OrdersView(tk.Frame):
             sticky="ew"
         )
 
-        self.refresh_order_list()
+        self.refresh_action_list()
 
-    def add_order(self, action, unit, target):
-        self.orders.append((len(self.orders), action, unit, target))
-        self.refresh_order_list()
+    def add_action(self, unit_action, unit_id, target_id=None, move_vec=None):
+        self.context.add_action(unit_action, unit_id, target_id, move_vec)
+        self.refresh_action_list()
 
-    def remove_order(self, order_id):
-        self.orders = [order for order in self.orders if order[0] != order_id]
+    def remove_action(self, action_id):
+        self.context.remove_action(action_id)
+        self.refresh_action_list()
 
-        self.refresh_order_list()
-
-    def refresh_order_list(self):
+    def refresh_action_list(self):
         for widget in self.list_container.winfo_children():
             widget.destroy()
-        for order in self.orders:
-            card = OrderCard(
+        for i in range(len(self.context.actions)):
+            action = self.context.actions[i]
+            card = ActionCard(
                 self.list_container,
-                order[1],
-                order[2],
-                order[3],
-                remove_func=lambda order_id=order[0]: self.remove_order(order_id)
+                action.unit_action,
+                action.unit_id,
+                action.target_id if action.move_vec is None else action.move_vec,
+                remove_func=lambda action_id=action.id: self.remove_action(i)
             )
 
             card.pack(

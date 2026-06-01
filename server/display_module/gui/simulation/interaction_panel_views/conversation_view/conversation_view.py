@@ -3,8 +3,11 @@ import tkinter as tk
 from display_module.gui.simulation.interaction_panel_views.conversation_view.chat_panel import ChatPanel
 
 class ConversationView(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, context):
         super().__init__(parent, bg="#3b3b3b")
+
+        self.context = context
+        self.players = self.context.players_names.items()
 
         # Main layout
         self.grid_rowconfigure(0, weight=0)
@@ -65,7 +68,7 @@ class ConversationView(tk.Frame):
         self.contacts_panel.grid_propagate(False)
 
         # Chat panel
-        self.chat_panel = ChatPanel(content)
+        self.chat_panel = ChatPanel(content, self.context)
 
         self.chat_panel.grid(
             row=0,
@@ -73,18 +76,10 @@ class ConversationView(tk.Frame):
             sticky="nsew"
         )
 
-        # Hardcoded players
-        self.players = [
-            "Player1",
-            "Player2",
-            "Player3",
-            "Player4"
-        ]
-
         self.create_contact_buttons()
 
-    def open_chat(self, player):
-        self.chat_panel.load_conversation(player)
+    def open_chat(self, player_id):
+        self.chat_panel.load_conversation(player_id)
 
     def create_contact_buttons(self):
         for player in self.players:

@@ -1,10 +1,14 @@
 import tkinter as tk
 
+from message import Message
+
+
 class ChatPanel(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, context):
         super().__init__(parent, bg="#3a3a3a")
 
-        self.current_player = None
+        self.context = context
+        self.current_player = context.player_ids[0]
 
         # Main grid
         self.grid_rowconfigure(1, weight=1)
@@ -51,20 +55,15 @@ class ChatPanel(tk.Frame):
 
         send_btn.pack(side="right", padx=5, pady=5)
 
-    def load_conversation(self, player):
-        self.current_player = player
-
-        # Hardcoded chat history
-        history = [
-            f"{player}: Hello there",
-            f"You: General Kenobi!"
-        ]
+    def load_conversation(self, player_id):
+        self.current_player = player_id
+        conversation = [message for message in self.context.conversations.get(self.current_player)]
 
         self.messages.config(state="normal")
         self.messages.delete("1.0", tk.END)
 
-        for msg in history:
-            self.messages.insert(tk.END, msg + "\n")
+        for msg in conversation:
+            self.messages.insert(tk.END, f"({msg.sender}) {msg.content}\n")
         self.messages.config(state="disabled")
 
     def send_message(self):
@@ -73,11 +72,6 @@ class ChatPanel(tk.Frame):
         if not text:
             return
 
-        self.messages.config(state="normal")
-
-        self.messages.insert(
-            tk.END,
-            f"You: {text}\n"
-        )
-        self.messages.config(state="disabled")
-        self.input.delete(0, tk.END)
+        message = Message(sender=self.context.my_id, recipient=self.current_player, content=text)
+        self.context.send_message(message)
+        self.load_conversation(message.sender)

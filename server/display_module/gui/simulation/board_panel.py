@@ -4,9 +4,11 @@ import tkinter as tk
 HEX_SIZE = 40
 
 class BoardPanel(tk.Frame):
-    def __init__(self, parent, game_board):
+    def __init__(self, parent, context):
         super().__init__(parent, bg="#3a3a3a")
-        self.game_board = game_board
+
+        self.context = context
+        self.board = context.board
 
         self.canvas = tk.Canvas(
             self,

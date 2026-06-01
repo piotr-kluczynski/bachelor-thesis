@@ -1,8 +1,10 @@
 import tkinter as tk
 
 class ConsolePanel(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, context):
         super().__init__(parent, bg="#3a3a3a")
+
+        self.context = context
 
         # Main grid
         self.grid_rowconfigure(1, weight=1)
@@ -52,10 +54,7 @@ class ConsolePanel(tk.Frame):
 
     def load_console(self):
         # Hardcoded command history
-        history = [
-            '>print("Hello world")\n'
-            '>Hello world'
-        ]
+        history = self.context.console_content
 
         self.commands.config(state="normal")
         self.commands.delete("1.0", tk.END)
@@ -70,11 +69,5 @@ class ConsolePanel(tk.Frame):
         if not text:
             return
 
-        self.commands.config(state="normal")
-
-        self.commands.insert(
-            tk.END,
-            f">{text}\n"
-        )
-        self.commands.config(state="disabled")
-        self.input.delete(0, tk.END)
+        self.context.execute_command(text)
+        self.load_console()

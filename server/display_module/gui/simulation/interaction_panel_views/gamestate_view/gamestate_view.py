@@ -5,12 +5,10 @@ from display_module.gui.simulation.interaction_panel_views.gamestate_view.unit_c
 
 
 class GamestateView(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, context):
         super().__init__(parent, bg="#3b3b3b")
 
-        # Hardcoded data
-        self.current_round = 6
-        self.max_round = 50
+        self.context = context
 
         self.regions = [
             "Mossvale",
@@ -60,7 +58,7 @@ class GamestateView(tk.Frame):
         # Round counter
         self.round_label = tk.Label(
             self,
-            text="Round " + str(self.current_round) + "/" + str(self.max_round),
+            text="Round " + str(self.context.current_round) + "/" + str(self.context.max_round),
             font=("Arial", 30),
             bg="#2a2a2a",
             fg="white",
@@ -155,21 +153,21 @@ class GamestateView(tk.Frame):
         self.refresh_region_list()
         self.refresh_unit_list()
 
-    def add_region(self, name):
+    def add_region_card(self, name):
         self.regions.append(name)
         self.refresh_region_list()
 
-    def add_unit(self, unit_type, name):
+    def add_unit_card(self, unit_type, name):
         self.units.append((unit_type, name))
         self.refresh_unit_list()
 
     def refresh_region_list(self):
         for widget in self.region_list.winfo_children():
             widget.destroy()
-        for region in self.regions:
+        for region_name in self.context.regions.items():
             card = RegionCard(
                 self.region_list,
-                region
+                region_name
             )
 
             card.pack(
@@ -182,75 +180,12 @@ class GamestateView(tk.Frame):
         for widget in self.units_list.winfo_children():
             widget.destroy()
 
-        light_infantry = [unit[1] for unit in self.units if unit[0] == 0]
-        heavy_infantry = [unit[1] for unit in self.units if unit[0] == 1]
-        cavalry = [unit[1] for unit in self.units if unit[0] == 2]
+        units = [unit for unit in self.context.units if unit.owner == self.context.my_id]
 
-        light_label = tk.Label(
-            self.units_list,
-            text="Light infantry",
-            bg="#2a2a2a",
-            fg="white",
-            font=("Arial", 10),
-            anchor="w"
-        )
-        light_label.pack(
-            fill="x",
-            padx=4,
-            pady=4,
-        )
-        for unit in light_infantry:
+        for unit in units:
             card = UnitCard(
                 self.units_list,
-                unit
-            )
-            card.pack(
-                fill="x",
-                padx=8,
-                pady=4,
-            )
-
-        heavy_label = tk.Label(
-            self.units_list,
-            text="Heavy infantry",
-            bg="#2a2a2a",
-            fg="white",
-            font=("Arial", 10),
-            anchor="w"
-        )
-        heavy_label.pack(
-            fill="x",
-            padx=4,
-            pady=4,
-        )
-        for unit in heavy_infantry:
-            card = UnitCard(
-                self.units_list,
-                unit
-            )
-            card.pack(
-                fill="x",
-                padx=8,
-                pady=4,
-            )
-
-        cavalry_label = tk.Label(
-            self.units_list,
-            text="Cavalry",
-            bg="#2a2a2a",
-            fg="white",
-            font=("Arial", 10),
-            anchor="w"
-        )
-        cavalry_label.pack(
-            fill="x",
-            padx=4,
-            pady=4,
-        )
-        for unit in cavalry:
-            card = UnitCard(
-                self.units_list,
-                unit
+                unit.unit_id
             )
             card.pack(
                 fill="x",

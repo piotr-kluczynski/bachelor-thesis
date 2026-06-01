@@ -1,6 +1,6 @@
 import tkinter as tk
 
-class OrderCard(tk.Frame):
+class ActionCard(tk.Frame):
     def __init__(self, parent, action, unit, target, remove_func):
         super().__init__(
             parent,

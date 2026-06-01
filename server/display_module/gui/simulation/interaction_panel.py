@@ -4,11 +4,13 @@ from display_module.gui.simulation.interaction_panel_views.console_view.console_
 from display_module.gui.simulation.interaction_panel_views.conversation_view.conversation_view import ConversationView
 from display_module.gui.simulation.interaction_panel_views.gamestate_view.gamestate_view import GamestateView
 from display_module.gui.simulation.interaction_panel_views.notifications_view.notifications_view import NotificationsView
-from display_module.gui.simulation.interaction_panel_views.orders_view.orders_view import OrdersView
+from display_module.gui.simulation.interaction_panel_views.orders_view.actions_view import ActionsView
 
 class InteractionPanel(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, context):
         super().__init__(parent, bg="#2f2f2f", width=300)
+
+        self.context = context
 
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=1)
@@ -28,11 +30,11 @@ class InteractionPanel(tk.Frame):
 
         # Views
         self.views = {
-            "console": ConsoleView(self.content),
-            "conversation": ConversationView(self.content),
-            "gamestate": GamestateView(self.content),
-            "notifications": NotificationsView(self.content),
-            "orders": OrdersView(self.content)
+            "console": ConsoleView(self.content, self.context),
+            "conversation": ConversationView(self.content, self.context),
+            "gamestate": GamestateView(self.content, self.context),
+            "notifications": NotificationsView(self.content, self.context),
+            "orders": ActionsView(self.content, self.context)
         }
 
         for view in self.views.values():

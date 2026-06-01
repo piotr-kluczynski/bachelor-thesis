@@ -4,8 +4,10 @@ from display_module.gui.simulation.interaction_panel_views.notifications_view.no
 
 
 class NotificationsView(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, context):
         super().__init__(parent, bg="#2a2a2a")
+
+        self.context = context
 
         header = tk.Label(
             self,
@@ -33,28 +35,21 @@ class NotificationsView(tk.Frame):
             pady=5
         )
 
-        # Hard-coded notification
-        self.add_notification(
-            "New message",
-            "Player4 send you a new message"
-        )
-        self.add_notification(
-            "Your unit was attacked",
-            "Your unit of Light Infantry: light_infantry23 was attacked by heavy_infantry10 and had to retreat"
-        )
-        self.add_notification(
-            "Command center was conquered",
-            "You have conquered the command center of Player2"
-        )
+        self.refresh_notification_list()
 
-    def add_notification(self, title, description):
-        card = NotificationCard(
-            self.list_container,
-            title,
-            description
-        )
 
-        card.pack(
-            fill="x",
-            pady=4
-        )
+    def refresh_notification_list(self):
+        for widget in self.list_container.winfo_children():
+            widget.destroy()
+
+        for notification in self.context.notifications:
+            card = NotificationCard(
+                self.list_container,
+                notification.title,
+                notification.description
+            )
+
+            card.pack(
+                fill="x",
+                pady=4
+            )

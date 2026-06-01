@@ -3,8 +3,10 @@ import tkinter as tk
 from display_module.gui.simulation.interaction_panel_views.console_view.console_panel import ConsolePanel
 
 class ConsoleView(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, context):
         super().__init__(parent, bg="#3b3b3b")
+
+        self.context = context
 
         # Main layout
         self.grid_columnconfigure(0, weight=1)
@@ -45,7 +47,7 @@ class ConsoleView(tk.Frame):
         content.grid_rowconfigure(0, weight=1)
         content.grid_columnconfigure(0, weight=1)
 
-        self.console_panel = ConsolePanel(content)
+        self.console_panel = ConsolePanel(content, self.context)
 
         self.console_panel.grid(
             row=0,

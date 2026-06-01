@@ -2,16 +2,17 @@ import tkinter as tk
 
 from display_module.gui.simulation.board_panel import BoardPanel
 from display_module.gui.simulation.interaction_panel import InteractionPanel
+from display_module.gui.simulation.simulation_context import SimulationContext
 from display_module.gui.simulation.top_bar import TopBar
 
 
 class SimulationScreen(tk.Frame):
-    def __init__(self, parent, game_board):
+    def __init__(self, parent, manager):
         super().__init__(parent)
 
         self.configure(bg="#1e1e1e")
 
-        self.game_board = game_board
+        self.context = SimulationContext(0, manager)
 
         # Main Grid
         self.grid_rowconfigure(0, weight=0)
@@ -41,7 +42,7 @@ class SimulationScreen(tk.Frame):
         self.content.grid_rowconfigure(0, weight=1)
 
         # Board panel
-        self.board_panel = BoardPanel(self.content, self.game_board)
+        self.board_panel = BoardPanel(self.content, self.context)
         self.board_panel.grid(
             row=0,
             column=0,
@@ -49,7 +50,7 @@ class SimulationScreen(tk.Frame):
         )
 
         # Interaction panel
-        self.interaction_panel = InteractionPanel(self.content)
+        self.interaction_panel = InteractionPanel(self.content, self.context)
         self.interaction_panel.grid(
             row=0,
             column=1,
