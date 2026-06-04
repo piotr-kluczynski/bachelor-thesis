@@ -6,7 +6,7 @@ from simulation_module.tile import Tile
 from simulation_module.utils import calc_distance
 
 class Simulation:
-    def __init__(self, players):
+    def __init__(self, players, max_round):
         self.players = players
 
         self.players_actions = {}
@@ -14,6 +14,9 @@ class Simulation:
         self.occupancy = {}
         self.simulated_occupancy = {}
         self.board = Board()
+
+        self.round = 1
+        self.max_round = max_round
 
         self.new_unit_id = 0
 

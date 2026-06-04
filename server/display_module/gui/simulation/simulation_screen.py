@@ -7,12 +7,12 @@ from display_module.gui.simulation.top_bar import TopBar
 
 
 class SimulationScreen(tk.Frame):
-    def __init__(self, parent, simulation):
+    def __init__(self, parent, board, units):
         super().__init__(parent)
 
         self.configure(bg="#1e1e1e")
 
-        self.context = SimulationContext(simulation)
+        self.context = SimulationContext(board, units)
 
         # Main Grid
         self.grid_rowconfigure(0, weight=0)

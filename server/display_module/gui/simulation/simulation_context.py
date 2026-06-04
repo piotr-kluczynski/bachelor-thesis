@@ -1,25 +1,24 @@
 from simulation_module.action import Action
 
+COLORS = {
+    0 : "red",
+    1 : "green",
+    2 : "blue",
+    3 : "brown",
+    4 : "yellow",
+    5: "purple"
+}
 
 class SimulationContext:
-    def __init__(self, simulation): # Temporarily passing simulation reference for development
+    def __init__(self, board, units, players_ids):
         #self.manager = manager # Reference to the Management object
         self.board_panel = None # Board panel reference, possibly replace with better solution access board_panel
+        self.players_colors = {} # Dictionary (player_id : playerColor)
 
-        self.my_id = 0 # Current user id
-
-        self.players_ids = [] # Array of player ids
-        self.players_names = {} # Dictionary (player_id : playerName)
-        self.players_status = {} # Dictionary (player_id : playerStatus)
-        self.player_colors = {} # Dictionary (player_id : playerColor)
-
-        self.board = simulation.board # {} Board object
+        self.board = board # {} Board object
         self.regions = {} # Dictionary ((q, r, s) : region_name)
-        self.units = simulation.units # []  Array of Unit objects
+        self.units = units # []  Array of Unit objects
         self.simulated_occupancy = {} # Dictionary ((q, r, s) : Unit)
-
-        self.current_round = 0
-        self.max_round = 0
 
         self.console_content = [] # Array of string
 
@@ -33,17 +32,11 @@ class SimulationContext:
 
     # Hard-coded function for creating the initial data
     def initialize(self):
-        self.players_ids = [0, 1, 2, 3, 4]
-        self.players_names = {0: "Piotr", 1: "Alex", 2: "Bob", 3: "Martin", 4: "Eva"}
-        self.players_status = {0: "Online", 1: "Online", 2: "Online", 3: "Online", 4: "Online"}
         self.players_colors = {0: "green", 1: "blue", 2: "red", 3: "yellow", 4: "purple"}
 
-        self.regions = {(0, 0, 0): "Central region"}
+        for player_id in self.players_ids:
+            self.players_colors[player_id] = COLORS[player_id]
 
-        self.current_round = 1
-        self.max_round = 50
-
-        self.conversations = {1 : [], 2 : [], 3 : [], 4 : []}
 
 
     def execute_command(self, command):
