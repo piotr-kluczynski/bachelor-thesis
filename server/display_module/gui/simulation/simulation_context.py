@@ -55,6 +55,15 @@ class SimulationContext:
         # Just add message to the conversation
         self.conversations[message.recipient].append(message)
 
+    def declare_attack(self, unit, target_unit):
+        return 0
+
+    def declare_support(self, unit, target_unit):
+        return 0
+
+    def declare_move(self, unit, coords):
+        return 0
+
     def add_action(self, unit_action, unit_id, target_id=None, move_vec=None):
         action = Action(unit_action, unit_id, target_id, move_vec)
         self.actions.append(action)

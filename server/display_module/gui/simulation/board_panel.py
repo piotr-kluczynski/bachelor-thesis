@@ -5,6 +5,16 @@ from display_module.gui.simulation.unit_info_panel import UnitInfoPanel
 
 HEX_SIZE = 40
 
+# Hex directions - with modified order, used for regions border drawing
+HEX_DIRECTIONS = [
+    (1, 0, -1),
+    (0, 1, -1),
+    (-1, 1, 0),
+    (-1, 0, 1),
+    (0, -1, 1),
+    (1, -1, 0)
+]
+
 class BoardPanel(tk.Frame):
     def __init__(self, parent, context):
         super().__init__(parent, bg="#3a3a3a")
@@ -12,12 +22,8 @@ class BoardPanel(tk.Frame):
         self.context = context
         self.context.board_panel = self # Assign self as a reference - possibly look for better solutions later
 
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=0)
-
-        self.grid_columnconfigure(0, weight=1)
-
         self.unit_items = {}
+        self.current_unit = None
 
         # Board
         self.canvas = tk.Canvas(
@@ -25,20 +31,21 @@ class BoardPanel(tk.Frame):
             bg="#222222"
         )
 
-        self.canvas.grid(
-           row=0,
-           column=0,
-            sticky="nsew"
+        self.canvas.pack(
+            fill="both",
+            expand=True
         )
 
         # Unit information panel
         self.unit_info_panel = UnitInfoPanel(self, self.context)
-        self.unit_info_panel.grid(
-            row=1,
-            column=0,
-            sticky="ew"
+        self.unit_info_panel.place(
+            relx=0,
+            rely=1,
+            relwidth=1,
+            anchor="sw",
+            height=120
         )
-        self.unit_info_panel.grid_remove()
+        self.unit_info_panel.place_forget()
 
         # MAPPING
         # canvas_id -> coordinates
@@ -63,7 +70,6 @@ class BoardPanel(tk.Frame):
     # Dragging board
     def start_pan(self, event):
         self.canvas.scan_mark(event.x, event.y)
-
     def pan_board(self, event):
         self.canvas.scan_dragto(event.x, event.y, gain=1)
 
@@ -98,6 +104,7 @@ class BoardPanel(tk.Frame):
                 fill=color,
                 outline="black",
                 width=2,
+                tags=("hex",)
             )
 
             self.hex_items[hex_id] = (q, r, s)
@@ -120,7 +127,12 @@ class BoardPanel(tk.Frame):
                 "<Leave>",
                 self.on_hex_hover_leave
             )
+            self.draw_border(tile)
 
+        self.canvas.bind(
+            "<Button-3>",
+            self.on_hex_click
+        )
     def draw_units(self):
         for unit_id, unit in self.context.units.items():
             q, r, s = unit.tile.q, unit.tile.r, unit.tile.s
@@ -134,7 +146,8 @@ class BoardPanel(tk.Frame):
                 center_y - radius,
                 center_x + radius,
                 center_y + radius,
-                fill=color
+                fill=color,
+                tags=("unit",)
             )
 
             self.canvas.tag_bind(
@@ -143,7 +156,35 @@ class BoardPanel(tk.Frame):
                 self.on_unit_click
             )
 
+            self.canvas.bind(
+                "<Button-3>",
+                self.on_right_click
+            )
+
             self.unit_items[unit_canvas_id] = unit
+    def draw_border(self, tile):
+        center_x, center_y = self.hex_to_pixel(tile.q, tile.r)
+
+        points = self.get_hex_points(center_x, center_y)
+        vertices = list(zip(points[::2], points[1::2]))
+
+        for i in range(6):
+            p1 = vertices[i]
+            p2 = vertices[(i + 1) % 6]
+
+            dq, dr, ds = HEX_DIRECTIONS[i]
+            neighbour = self.context.board.tiles.get((tile.q + dq, tile.r + dr,tile.s + ds))
+            if neighbour is None:
+                continue
+
+            if tile.region != neighbour.region:
+                self.canvas.create_line(
+                    p1[0], p1[1],
+                    p2[0], p2[1],
+                    fill="blue",
+                    width=4
+                )
+
 
     def center_camera_on(self, q, r):
 
@@ -170,18 +211,25 @@ class BoardPanel(tk.Frame):
 
         self.canvas.xview_moveto(x_fraction)
         self.canvas.yview_moveto(y_fraction)
-    def show_unit_info(self, unit):
-        self.unit_info_panel.set_data(unit)
-        self.unit_info_panel.grid()
+    def show_unit_info(self):
+        self.unit_info_panel.set_data(self.current_unit)
+        self.unit_info_panel.place(
+            relx=0,
+            rely=1,
+            relwidth=1,
+            anchor="sw",
+            height=120
+        )
 
     # Event handlers
     def on_hex_click(self, event):
         item = self.canvas.find_withtag("current")[0]
         coords = self.hex_items[item]
-        print("Clicked:", coords)
 
         # Hiding unit description
-        self.unit_info_panel.grid_remove()
+        self.current_unit = None
+        self.unit_info_panel.place_forget()
+
     def on_hex_hover_enter(self, event):
         item = self.canvas.find_withtag("current")[0]
         self.canvas.itemconfig(
@@ -197,6 +245,43 @@ class BoardPanel(tk.Frame):
         )
     def on_unit_click(self, event):
         item = self.canvas.find_withtag("current")[0]
-        unit = self.unit_items[item]
+        self.current_unit = self.unit_items[item]
 
-        self.show_unit_info(unit)
+        self.show_unit_info()
+
+    def on_right_click(self, event):
+        item = self.canvas.find_withtag("current")[0]
+        tags = self.canvas.gettags(item)
+
+        if self.current_unit.owner is not self.context.my_id:
+            return
+
+        if self.current_unit is not None:
+            menu = tk.Menu(
+                self.canvas,
+                tearoff=False
+            )
+
+            if "unit" in tags:
+                target_unit = self.unit_items[item]
+
+                menu.add_command(
+                    label="Attack",
+                    command=lambda: self.context.declare_attack(self.current_unit, target_unit)
+                )
+                menu.add_command(
+                    label="Support",
+                    command=lambda: self.context.declare_support(self.current_unit, target_unit)
+                )
+            elif "hex" in tags:
+                coords = self.hex_items[item]
+
+                menu.add_command(
+                    label="Move",
+                    command=lambda: self.context.declare_move(self.current_unit, coords)
+                )
+
+            menu.tk_popup(
+                event.x_root,
+                event.y_root,
+            )

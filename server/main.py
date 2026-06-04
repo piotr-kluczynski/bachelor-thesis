@@ -9,6 +9,9 @@ if __name__ == '__main__':
     simulation.add_heavy_infantry(0, 4, -2, -2)
     simulation.add_cavalry(1, -3, -3, 6)
 
+    simulation.board.tiles.get((0, 0, 0)).region = "Warszawa"
+    simulation.board.tiles.get((-1, 0, 1)).region = "Warszawa"
+
     root = tk.Tk()
 
     root.title("Simulation")
