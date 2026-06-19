@@ -96,29 +96,80 @@ def observeRegion(regionId: int) -> str:
     return "<Terrain description>"
 
 
-# Meta tools - Expand for better game-state analysis
+# Meta tools
+
+# Think about adding the tools describing the game rules,
+# so that the model can recall some specific mechanics at any time
 @tool
-def gameState() -> str:
+def playerList() -> str:
     """
-    Recovers the game state from this turn report.
+    Returns the list of remaining players.
 
-    :return: Description of the game state.
+    # Draw the player list from the local version of the simulation.
+
+    :return: "<List of remaining players>"
     """
-
-    return "<Game state>"
-
-@tool
-def militaryOverview() -> str:
-    """
-    Recovers the military overview from this turn report.
-
-    :return: Description of the military overview.
-    """
-
-    return "<Military overview>"
 
 @tool
-def recentEvents() -> str:
+def leaderBoard() -> str:
+    """
+    Returns the leaderboard.
+
+    :return: List of all players and their positions on the leaderboard.
+    """
+
+    # Draws data from the local version of the app.
+
+    return "<Leaderboard>"
+
+@tool
+def controlledUnits() -> str:
+    """
+    Returns the list of owned units.
+
+    :return: List of owned units.
+    """
+
+    # Get list of units from the local version of the simulation.
+    return "<Owned units>"
+
+@tool
+def unitDetails(unitId: int) -> str:
+    """
+    Returns the details of the given unit ID.
+
+    :param unitId: ID of the unit.
+    :return: Description of the unit.
+    """
+
+    # Draw data about the unit from the local version of the app.
+
+    return "<Unit details>"
+
+@tool
+def controlledRegions() -> str:
+    """
+    Returns the list of owned regions.
+
+    :return: List of owned regions.
+    """
+
+    return "<List of owned regions>"
+
+@tool
+def mapDescription() -> str:
+    """
+    Returns the description of the map.
+
+    :return: List of all regions of the map.
+    """
+
+    # Draw description of all regions of the map.
+
+    return "<Map description>"
+
+@tool
+def getRecentEvents() -> str:
     """
     Recovers the recent events from this turn report.
 
@@ -137,4 +188,3 @@ def getConversation(userId: int) -> str:
     """
 
     return "<Conversation content>"
-
