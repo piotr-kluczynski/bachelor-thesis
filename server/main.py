@@ -1,8 +1,27 @@
 import tkinter as tk
 from display_module.gui.simulation.simulation_screen import SimulationScreen
+from network_module.networkModule import NetworkModule
 from simulation_module.simulation import Simulation
 
 if __name__ == '__main__':
+    networkModule = NetworkModule()
+
+    networkModule.initializeAgentSocket(12345)
+    networkModule.startAgentConnection()
+
+    roundLimit = 15
+    players = [0, 1, 2, 3]
+    playerNames = ["Ty", "kuba", "michal", "bartek"]
+    regions = [0, 1, 2]
+    regionNames = ["alexandria", "radom", "warsaw"]
+    regionNeighbours = [[1], [0, 2], [1]]
+
+    networkModule.sendSimulationDataToAgent(roundLimit, players, playerNames, regions, regionNames, regionNeighbours)
+
+
+    networkModule.closeAgentConnection()
+
+    """
     simulation = Simulation([0])
     simulation.create_empty_board(9, 9, 9)
     simulation.add_light_infantry(0, -2, 2, 0)
@@ -22,3 +41,4 @@ if __name__ == '__main__':
     screen.pack(fill="both", expand=True)
 
     root.mainloop()
+    """

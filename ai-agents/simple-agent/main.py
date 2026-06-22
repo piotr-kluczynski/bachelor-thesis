@@ -1,7 +1,11 @@
 # Importing libraries
+import socket
+import json
 from langchain.agents import create_agent
 from langchain_core.messages import SystemMessage, AIMessage
 from langchain_openai import ChatOpenAI
+
+from network_module.networkModule import NetworkModule
 from prompts.simulationStartPrompt import simulationStartPrompt
 from prompts.turnStartPrompt import turnStartPrompt
 from prompts.systemResponsePrompt import systemResponsePrompt
@@ -9,21 +13,31 @@ from tools.tools import *
 
 # Define constants
 API_KEY = input("Enter your API key: ")
+CLIENT_PORT = 12345
 
-# Test connection with the local application
+# Connect with the local application
+networkModule = NetworkModule()
+networkModule.startClientConnection(CLIENT_PORT)
+
+# Getting about new round from the client
+data = networkModule.getSimulationData()
+
 running = True
 
-finalRoundNum = 15 # drawn from app
-playerList = ["kuba", "michal", "bartek"] # drawn from app
-regionNames = {0:"alexandria", 1:"radom", 2:"warsaw"} # drawn from app
-regionNeighbours = [[1], [0, 2], [1]] # drawn from app
+roundLimit = data["roundLimit"]
+players = data["players"]
+playerNames = data["playerNames"]
+regions = data["regions"]
+regionNames = data["regionNames"]
+regionNeighbours = data["regionNeighbours"]
 
+"""
 # Defining the agent
 tools = [
     sendMessage,
     moveUnit, supportUnit, attackUnit,
     observeUnit, observeRegion,
-    playerList, leaderBoard, controlledUnits, controlledRegions, unitDetails, mapDescription, getRecentEvents, getRecentEvents
+    players, leaderBoard, controlledUnits, controlledRegions, unitDetails, mapDescription, getRecentEvents, getRecentEvents
 ]
 
 model = ChatOpenAI(
@@ -38,14 +52,14 @@ agent = create_agent(
 
 conversation = [
     SystemMessage(
-        content=simulationStartPrompt(finalRoundNum, playerList, regionNames, regionNeighbours)
+        content=simulationStartPrompt(roundLimit, players, playerNames, regions, regionNames, regionNeighbours)
     )
 ]
 
 while running:
     # Draw data about the new turn
     currentRound = 1 # drawn from app
-    playerList = ["kuba", "michal", "bartek"] # drawn from app
+    players = ["kuba", "michal", "bartek"] # drawn from app
     leaderBoard = {"kuba": 150, "michal": 100, "bartek": 50} # drawn from app
     controlledUnits = ["light_infantry3", "light_infantry4", "heavy_infantry6", "cavalry2"] # drawn from app
     controlledRegions = ["warsaw"] # drawn from app
@@ -58,7 +72,7 @@ while running:
     conversation.append(
         SystemMessage(
             content=turnStartPrompt(
-                currentRound, finalRoundNum, playerList, leaderBoard,
+                currentRound, roundLimit, players, leaderBoard,
                 controlledUnits, controlledRegions, enemyUnitsPerRegion,
                 events
             )
@@ -86,3 +100,4 @@ while running:
 
     if False:
         running = False
+"""

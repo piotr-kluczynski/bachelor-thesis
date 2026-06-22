@@ -6,7 +6,7 @@ from simulation_module.simulation import Simulation
 
 class Manager:
     def __init__(self, display_mode):
-        self.network = None # Initialize Network module
+        self.network = None # Initialize NetworkModule module
 
         # Start up as None - they are related to specific moments of application
         self.display = None
