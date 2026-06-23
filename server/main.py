@@ -3,12 +3,20 @@ from display_module.gui.simulation.simulation_screen import SimulationScreen
 from network_module.networkModule import NetworkModule
 from simulation_module.simulation import Simulation
 
-if __name__ == '__main__':
-    networkModule = NetworkModule()
+# Define constants
+CLIENT_PORT = 12345
 
-    networkModule.initializeAgentSocket(12345)
+if __name__ == '__main__':
+    # Initializing simulation - Step 1 - Starting connection
+    networkModule = NetworkModule()
+    networkModule.initializeAgentSocket(CLIENT_PORT)
     networkModule.startAgentConnection()
 
+    # Initializing simulation - Step 2 - Waiting for player to declare readiness
+    networkModule.waitForAgentSimulationReady()
+
+    # Initializing simulation - Step 3 - Sending initial data to the agent and waiting for response
+    # Mockup data
     roundLimit = 15
     players = [0, 1, 2, 3]
     playerNames = ["Ty", "kuba", "michal", "bartek"]
@@ -16,8 +24,29 @@ if __name__ == '__main__':
     regionNames = ["alexandria", "radom", "warsaw"]
     regionNeighbours = [[1], [0, 2], [1]]
 
-    networkModule.sendSimulationDataToAgent(roundLimit, players, playerNames, regions, regionNames, regionNeighbours)
+    networkModule.initSimulation(roundLimit, players, playerNames, regions, regionNames, regionNeighbours)
 
+
+
+    # Starting new turn - Step 1 - Waiting for player to declare readiness
+    networkModule.waitForAgentTurnReady()
+
+    # Starting new turn - Step 2 - Sending turn data to the agent and waiting for their response
+    # Mockup turn data
+    currentRound = 1
+    roundLimit = 15,
+    players = ["kuba", "michal", "bartek"]
+    leaderBoard = {"kuba": 150, "michal": 100, "bartek": 50}
+    controlledUnits = ["light_infantry3", "light_infantry4", "heavy_infantry6", "cavalry2"]
+    controlledRegionsId = [2]
+    controlledRegionsNames = ["warsaw"]
+    enemyUnitsPerRegion = [2]
+    events = {
+        "New message": "bartek: Let's team up against kuba!",
+        "Your unit was destroyed!": "Your unit light_infantry2 was destroyed by heavy_infantry3 owned by kuba!"
+    }
+
+    networkModule.startTurn(currentRound, roundLimit, players, leaderBoard, controlledUnits, controlledRegionsId, controlledRegionsNames, enemyUnitsPerRegion, events)
 
     networkModule.closeAgentConnection()
 

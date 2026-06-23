@@ -101,6 +101,14 @@ def observeRegion(regionId: int) -> str:
 # Think about adding the tools describing the game rules,
 # so that the model can recall some specific mechanics at any time
 @tool
+def finishTurn():
+    """
+    Finishes the current turn.
+
+    :return:
+    """
+
+@tool
 def playerList() -> str:
     """
     Returns the list of remaining players.
