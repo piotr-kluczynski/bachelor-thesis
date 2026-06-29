@@ -1,33 +1,33 @@
 def turnStartPrompt(
         currentRound, finalRound, playerList, leaderBoardDict,
-        controlledUnits, controlledRegions, enemyUnitsPerRegion,
+        controlledUnits, controlledRegionsId, controlledRegionsNames, enemyUnitsPerRegion,
         eventDict):
 
     # Game State
-    gameStateDesc = (f"Round {currentRound}/{finalRound}"
+    gameStateDesc = (f"Round {currentRound}/{finalRound[0]}\r\n"
                      "Remaining players:\r\n")
     for player in playerList:
-        gameStateDesc.join(player)
+        gameStateDesc += f"{player}\r\n"
 
-    gameStateDesc.join("Leaderboard:\r\n")
+    gameStateDesc += f"Leaderboard:\r\n"
     i = 0
     for player, score in leaderBoardDict.items():
-        gameStateDesc.join(f"{i}. {player}: {score}\r\n")
+        gameStateDesc += f"{i}. {player}: {score}\r\n"
         i += 1
 
     # Military Overview
     militaryDesc = "Controlled Units:\r\n"
     for unit in controlledUnits:
-        militaryDesc.join(f"{unit}\r\n")
+        militaryDesc += f"{unit}\r\n"
 
-    militaryDesc.join("Controlled Regions:\r\n")
-    for regionId, regionName in controlledRegions.items():
-        militaryDesc.join(f"{regionName}({regionId}), enemy units in the region: {enemyUnitsPerRegion[regionId]}\r\n")
+    militaryDesc += "\r\nControlled Regions:\r\n"
+    for i in range(len(controlledRegionsId)):
+        militaryDesc += f"{controlledRegionsNames[i]}({controlledRegionsId[i]}), enemy units in the region: {enemyUnitsPerRegion[i]}\r\n"
 
 
     # Events
     eventsDesc = ""
     for eventTitle, eventContent in eventDict.items():
-        eventsDesc.join(f"{eventTitle}: {eventContent}\r\n")
+        eventsDesc += f"{eventTitle}: {eventContent}\r\n"
 
-    return gameStateDesc.join(f"{militaryDesc}\r\n").join(f"{militaryDesc}\r\n")
+    return gameStateDesc + f"{militaryDesc}\r\n" + f"{eventsDesc}\r\n"

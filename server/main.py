@@ -48,6 +48,12 @@ if __name__ == '__main__':
 
     networkModule.startTurn(currentRound, roundLimit, players, leaderBoard, controlledUnits, controlledRegionsId, controlledRegionsNames, enemyUnitsPerRegion, events)
 
+    currentOrderList = {}
+    newMessages = {}
+    # Simulating single within-turn communication
+    networkModule.waitForAgentInTurnRequest(currentOrderList, newMessages)
+
+
     networkModule.closeAgentConnection()
 
     """

@@ -10,6 +10,7 @@ from prompts.simulationStartPrompt import simulationStartPrompt
 from prompts.turnStartPrompt import turnStartPrompt
 from prompts.systemResponsePrompt import systemResponsePrompt
 from tools.tools import *
+from tools.tools import supportUnit
 
 # Define constants
 CLIENT_PORT = 12345
@@ -68,12 +69,12 @@ if __name__ == '__main__':
 
         print(turnStartPrompt(
                     data["currentRound"], data["roundLimit"], data["players"], data["leaderBoard"],
-                    data["controlledUnits"], data["controlledRegions"], data["enemyUnitsPerRegion"],
+                    data["controlledUnits"], data["controlledRegionsId"], data["controlledRegionsNames"], data["enemyUnitsPerRegion"],
                     data["events"]
                 ))
-        break
 
         # Sending the turn data to the chatbot
+        '''
         conversation.append(
             SystemMessage(
                 content=turnStartPrompt(
@@ -83,22 +84,37 @@ if __name__ == '__main__':
                 )
             )
         )
+        '''
 
         while not endOfTurnFlag:
-            actions = []
+            # Check if the current round shouldn't end
+
+            # Clearing the action list after the previous in-turn round
+            used_actions.clear()
+
             # Let chatbot make its choices
-            response = agent.invoke(conversation)
+            #response = agent.invoke(conversation)
+
+            supportUnit.invoke({"unitId": 2,"targetUnitId": 3}) # Simulating agent actions
+            controlledUnits.invoke({}) # Simulating agent actions
 
             # Send the request to the server
-            data = networkModule.sendInTurnRequest(actions)
+            data = networkModule.sendInTurnRequest(used_actions)
+
+            print(systemResponsePrompt(
+                data["system_responses"], data["order_list"], data["new_messages"]
+            ))
 
             # Send system response to the chatbot
+            '''
             conversation.append(
                 AIMessage(content=response),
                 SystemMessage(
                     content=systemResponsePrompt(data["systemResponses"], data["actionList"], data["newMessages"])
                 )
             )
+            '''
+            break
 
 
     """

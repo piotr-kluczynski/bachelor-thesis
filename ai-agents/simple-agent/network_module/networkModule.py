@@ -107,7 +107,46 @@ class NetworkModule:
 
         return None
 
-    def sendInTurnRequest(self, actions):
+    def sendInTurnRequest(self, actions, timeout=30):
+        self.clientSocket.settimeout(timeout)
+
+        send_message(
+            self.clientSocket,
+            {
+                "type": "IN_TURN_REQUEST",
+                "payload": {
+                    "requests": actions
+                }
+            }
+        )
+
+        try:
+            response = receive_message(self.clientSocket)
+        except socket.timeout:
+            print("Waiting for simulation timeout")
+            return None
+
+        if response is None:
+            return None
+
+        if response.get("type") == "IN_TURN_RESPONSE":
+            print("Received in turn response")
+
+            send_message(
+                self.clientSocket,
+                {
+                    "type": "ACK",
+                    "payload": {}
+                }
+            )
+
+            return response["payload"]
+
+        elif response["type"] == "ERROR":
+            print(response["payload"]["error"])
+        else:
+            print(f"Unexpected message: {response.get('type')}")
+
         return None
 
     def closeClientConnection(self):
