@@ -1,4 +1,4 @@
-def simulationStartPrompt(roundNum, playerList, regionNames, regionNeighbours):
+def simulationStartPrompt(roundNum, players, playersNames, regions, regionNames, regionNeighbours):
     # Game Rules Description
     rulesDesc = ("Game Rules\r\n"
                  "1. Game overview\r\n"
@@ -60,16 +60,15 @@ def simulationStartPrompt(roundNum, playerList, regionNames, regionNeighbours):
                    "This section contains the parameters specific to the current simulation session.\r\n"
                    "1. Players\r\n"
                    "The following players participate in this session:")
-    for player in playerList:
-        sessionDesc += f"{player}\r\n"
+    for i in range(len(players)):
+        sessionDesc += f"{playersNames[i]} (id={players[i]})\r\n"
 
     sessionDesc += ("."
                      "Each player is identified by their unique player ID. Use these IDs when referring to other players through available tools.\r\n"
                      "2. Map\r\n"
                      "The game map consists of the following regions:\r\n")
-    for regionId, regionName in regionNames.items():
-        neighbours = regionNeighbours[regionId]
-        sessionDesc += f"{regionName}, {regionId}, {neighbours};\r\n"
+    for i in range(len(regions)):
+        sessionDesc += f"{regionNames[i]}, {regions[i]}, {regionNeighbours[i]};\r\n"
 
     sessionDesc += ("."
                      "Each region has: a unique region ID, a region name, a list of neighboring region IDs.\r\n"

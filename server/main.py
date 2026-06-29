@@ -35,7 +35,8 @@ if __name__ == '__main__':
     # Mockup turn data
     currentRound = 1
     roundLimit = 15,
-    players = ["kuba", "michal", "bartek"]
+    players = [0, 1, 2, 3],
+    playerNames = ["Ty", "kuba", "michal", "bartek"]
     leaderBoard = {"kuba": 150, "michal": 100, "bartek": 50}
     controlledUnits = ["light_infantry3", "light_infantry4", "heavy_infantry6", "cavalry2"]
     controlledRegionsId = [2]
@@ -46,7 +47,7 @@ if __name__ == '__main__':
         "Your unit was destroyed!": "Your unit light_infantry2 was destroyed by heavy_infantry3 owned by kuba!"
     }
 
-    networkModule.startTurn(currentRound, roundLimit, players, leaderBoard, controlledUnits, controlledRegionsId, controlledRegionsNames, enemyUnitsPerRegion, events)
+    networkModule.startTurn(currentRound, roundLimit, players, playerNames, leaderBoard, controlledUnits, controlledRegionsId, controlledRegionsNames, enemyUnitsPerRegion, events)
 
     currentOrderList = {}
     newMessages = {}

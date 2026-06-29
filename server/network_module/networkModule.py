@@ -202,7 +202,7 @@ class NetworkModule:
 
 
     def startTurn(self,
-                  currentRound, roundLimit, players, leaderBoard,
+                  currentRound, roundLimit, players, playerNames, leaderBoard,
                   controlledUnits, controlledRegionsId, controlledRegions, enemyUnitsPerRegion,
                   events
     ):
@@ -212,6 +212,7 @@ class NetworkModule:
                 "currentRound": currentRound,
                 "roundLimit": roundLimit,
                 "players": players,
+                "playerNames": playerNames,
                 "leaderBoard": leaderBoard,
                 "controlledUnits": controlledUnits,
                 "controlledRegionsId": controlledRegionsId,

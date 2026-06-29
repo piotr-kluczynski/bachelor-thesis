@@ -1,4 +1,4 @@
-def systemResponsePrompt(
+def turnEndPrompt(
         systemResponses,
         actions,
         newMessages

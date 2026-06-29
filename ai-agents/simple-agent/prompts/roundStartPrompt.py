@@ -1,13 +1,13 @@
-def turnStartPrompt(
-        currentRound, finalRound, playerList, leaderBoardDict,
+def roundStartPrompt(
+        currentRound, finalRound, players, playerNames, leaderBoardDict,
         controlledUnits, controlledRegionsId, controlledRegionsNames, enemyUnitsPerRegion,
         eventDict):
 
     # Game State
     gameStateDesc = (f"Round {currentRound}/{finalRound[0]}\r\n"
                      "Remaining players:\r\n")
-    for player in playerList:
-        gameStateDesc += f"{player}\r\n"
+    for i in range(len(players)):
+        gameStateDesc += f"{playerNames[i]} (id={players[i]})\r\n"
 
     gameStateDesc += f"Leaderboard:\r\n"
     i = 0
