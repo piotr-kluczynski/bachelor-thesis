@@ -124,6 +124,7 @@ class NetworkModule:
     def waitForAgentInTurnRequest(self, currentOrderList, newMessages):
         while True:
             message = receive_message(self.agentConnection)
+            print("POPIERDOLIŁO CIĘ?")
 
             if message is None:
                 return False
@@ -165,6 +166,9 @@ class NetworkModule:
                     elif request["Action"] == "ControlledRegions":
                         # Get the list of currently controlled regions
                         responses.append(f"Warsaw (id: 2)")
+                    elif request["Action"] == "MapDescription":
+                        # Get the general descriptions of all regions on the map
+                        responses.append(f"Map Description: ...")
                     elif request["Action"] == "GetRecentEvents":
                         # Send again the list of events from the current round
                         responses.append(f"Recent events: New message: bartek: Let's team up against kuba!, Your unit was destroyed!: Your unit light_infantry2 was destroyed by heavy_infantry3 owned by kuba!")

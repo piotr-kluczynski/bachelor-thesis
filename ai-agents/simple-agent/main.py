@@ -47,7 +47,7 @@ if __name__ == '__main__':
         moveUnit, supportUnit, attackUnit,
         observeUnit, observeRegion,
         finishTurn, playerList, leaderBoard, controlledUnits, controlledRegions, unitDetails, mapDescription,
-        getRecentEvents, getRecentEvents
+        getRecentEvents
     ]
 
     # CHANGE TO THE DESIRED AGENT
