@@ -63,7 +63,7 @@ class ChatPanel(tk.Frame):
         self.messages.delete("1.0", tk.END)
 
         for msg in conversation:
-            sender_name = self.context.players_names.get(msg.sender)
+            sender_name = self.context.player_names.get(msg.sender)
             self.messages.insert(tk.END, f"({sender_name}) {msg.content}\n")
         self.messages.config(state="disabled")
 

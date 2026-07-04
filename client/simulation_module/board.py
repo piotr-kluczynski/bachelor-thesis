@@ -12,14 +12,11 @@ HEX_DIRECTIONS = [
 ]
 
 class Board:
-    def __init__(self, tiles=None, regions=None):
+    def __init__(self, tiles=None):
         if tiles is None:
             tiles = {}
         self.tiles = tiles
-
-        if regions is None:
-            regions = []
-        self.regions = regions
+        self.regions = {}
 
     def get_tile_by_coord(self, q, r, s):
         if q + r + s != 0:
@@ -50,14 +47,6 @@ class Board:
             if neighbour is not None:
                 results.append(neighbour)
         return results
-
-    def get_owned_regions(self, player):
-        owned_regions = []
-        for region in self.regions:
-            if region.owner == player:
-                owned_regions.append(region)
-
-        return owned_regions
 
     def find_shortest_path(self, start_tile, end_tile, max_distance, occupancy):
         if calc_distance(start_tile.q, start_tile.r, start_tile.s, end_tile.q, end_tile.r, end_tile.s) > max_distance:

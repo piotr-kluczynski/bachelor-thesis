@@ -6,7 +6,7 @@ from simulation_module.tile import Tile
 from simulation_module.utils import calc_distance
 
 class Simulation:
-    def __init__(self, players, max_round):
+    def __init__(self, players, max_round, upkeep_round):
         self.players = players
 
         self.players_actions = {}
@@ -17,10 +17,101 @@ class Simulation:
 
         self.round = 1
         self.max_round = max_round
+        self.upkeep_round = upkeep_round
 
         self.new_unit_id = 0
 
     # TURN MANAGEMENT
+    def start_simulation(self, tiles, regions, starting_units):
+        self.board = Board(tiles, regions)
+
+        for coord, units in starting_units.items():
+            for unit in units:
+
+                tile = self.board.get_tile_by_coord(coord[0], coord[1], coord[2])
+
+                tile.unit = unit
+                unit.tile = tile
+
+                self.units.update({unit.unit_id: unit})
+                self.new_unit_id += 1
+
+                # Adding to the occupancy new unit
+                self.occupancy[(tile.q, tile.r, tile.s)] = unit
+
+                self.units.update(unit.owner).append(unit)
+
+        return True
+    def start_round(self, new_units):
+        self.round += 1
+        if self.round > self.max_round:
+            return False
+
+        # If the round is the upkeep round
+        if self.round % self.upkeep_round == 0:
+            # Calculating each player upkeep
+            upkeep_scores = {}
+            for player in self.players:
+                upkeep_scores[player] = 0
+
+            for region in self.board.regions:
+                upkeep_scores[region] += region.regionUpkeep
+
+            # Removing or adding new units according to player upkeep
+            for player in self.players:
+                score = upkeep_scores[player]
+
+                if score > 0:
+                    counter = 0
+
+                    for region in self.board.get_owned_regions(player):
+                        new_unit = None
+                        new_unit_id = None
+
+                        if new_units[player][counter] is 0:
+                            new_unit_id = f"light_infantry_{self.new_unit_id}"
+                            new_unit = Unit(new_unit_id, player, 2, 1, 6)
+                            score -= 1
+                        elif new_units[player][counter] is 1 and score - 2 >= 0:
+                            new_unit_id = f"heavy_infantry_{self.new_unit_id}"
+                            new_unit = Unit(new_unit_id, player, 1, 2, 8)
+                            score -= 2
+                        elif new_units[player][counter] is 2 and score - 3 >= 0:
+                            new_unit_id = f"cavalry_{self.new_unit_id}"
+                            new_unit = Unit(f"cavalry_{self.new_unit_id}", player, 3, 3, 6)
+                            score -= 3
+
+                        if new_unit is not None:
+                            tile = region.commandCentre
+
+                            tile.unit = new_unit
+                            new_unit.tile = tile
+
+                            self.units.update({new_unit_id: new_unit})
+                            self.new_unit_id += 1
+
+                            # Adding to the occupancy new unit
+                            self.occupancy[(tile.q, tile.r, tile.s)] = new_unit
+
+                        if score <= 0:
+                            break
+
+                        counter += 1
+                elif score < 0:
+                    dead_units = []
+
+                    for unit in self.units[player]:
+                        dead_units.append(unit)
+                        score += unit.upkeep
+
+                        if score >= 0:
+                            break
+
+                    for unit_id in dead_units:
+                        self.units[unit_id].tile = None
+                        del self.units[unit_id]
+
+        return True
     def end_round(self):
         self.occupancy = {}
         self.simulated_occupancy = {}
@@ -184,7 +275,7 @@ class Simulation:
         return expanded_movement_actions, support_actions, attack_actions
 
     # GENERATING BOARD
-    def create_empty_board(self, q_range, r_range, s_range):
+    def create_empty_map(self, q_range, r_range, s_range):
         new_tiles = {}
         for q in range(-q_range, q_range+1):
             for r in range(-r_range, r_range+1):
@@ -192,6 +283,17 @@ class Simulation:
                     if q + r + s == 0:
                         new_tiles[(q, r, s)] = Tile(q, r, s)
         self.board.tiles = new_tiles
+    def add_region(self, region, command_centre_coord, q_range, r_range, s_range):
+        tiles_coord = []
+        for q in range(-q_range, q_range+1):
+            for r in range(-r_range, r_range+1):
+                for s in range(-s_range, s_range+1):
+                    if q + r + s == 0:
+                        tiles_coord.append((q, r, s))
+
+        self.board.regions[region] = []
+        self.board.add_tiles_to_region(region, tiles_coord)
+        self.board.get_tile_by_coord(command_centre_coord[0], command_centre_coord[1], command_centre_coord[2]).isCommandCentre = True
 
     # CREATING UNITS
     def add_light_infantry(self, owner, q, r, s):
@@ -250,8 +352,8 @@ class Simulation:
     def observe_unit(self, unit_id):
         unit = self.units[unit_id]
         return self.board.get_tiles_in_range(unit.tile, 3)
-    def observe_region(self, region_id):
-        return self.board.regions[region_id]
+    def observe_region(self, region):
+        return self.board.regions[region].tiles
 
     # UNIT ACTIONS
     def move_unit(self, unit, dq, dr, ds):

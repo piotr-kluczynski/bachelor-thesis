@@ -30,7 +30,7 @@ class TopBar(tk.Frame):
         for player_id in self.context.players_ids:
             label = tk.Label(
                 self.players,
-                text=f"{self.context.players_names.get(player_id)}: {self.context.players_status.get(player_id)}",
+                text=f"{self.context.player_names.get(player_id)}: {self.context.players_status.get(player_id)}",
                 bg="#2b2b2b",
                 fg=self.context.players_colors.get(player_id),
             )

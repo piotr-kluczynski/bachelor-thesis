@@ -4,4 +4,3 @@ class Tile:
         self.r = r
         self.s = s
         self.unit = None
-        self.region = None

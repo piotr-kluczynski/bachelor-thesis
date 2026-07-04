@@ -75,7 +75,7 @@ class UnitInfoPanel(tk.Frame):
 
         self.unit_owner_label = tk.Label(
             self,
-            text=f"Owner:\n{self.context.players_names.get(self.unit_owner)}",
+            text=f"Owner:\n{self.context.player_names.get(self.unit_owner)}",
             bg="#444444",
             fg="white",
             font=("Arial", 12)

@@ -7,7 +7,7 @@ class ConversationView(tk.Frame):
         super().__init__(parent, bg="#3b3b3b")
 
         self.context = context
-        self.players = self.context.players_names.items()
+        self.players = self.context.player_names.items()
 
         # Main layout
         self.grid_rowconfigure(0, weight=0)

@@ -10,10 +10,16 @@ COLORS = {
 }
 
 class SimulationContext:
-    def __init__(self, board, units, players_ids):
+    def __init__(self, board, units, players_ids, player_names):
         #self.manager = manager # Reference to the Management object
+        self.my_id = players_ids[0]
         self.board_panel = None # Board panel reference, possibly replace with better solution access board_panel
+        self.players_ids = players_ids
+        self.players_status = {}
+        self.player_names = player_names
         self.players_colors = {} # Dictionary (player_id : playerColor)
+        self.current_round = 0
+        self.max_round = 15
 
         self.board = board # {} Board object
         self.regions = {} # Dictionary ((q, r, s) : region_name)
@@ -32,10 +38,10 @@ class SimulationContext:
 
     # Hard-coded function for creating the initial data
     def initialize(self):
-        self.players_colors = {0: "green", 1: "blue", 2: "red", 3: "yellow", 4: "purple"}
-
         for player_id in self.players_ids:
             self.players_colors[player_id] = COLORS[player_id]
+            self.players_status[player_id] = "Online"
+            self.conversations[player_id] = []
 
 
 

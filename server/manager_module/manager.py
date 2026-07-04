@@ -49,7 +49,7 @@ class Manager:
 
         # Initialize simulation
         # Currently hard-coded settings, later they need to be drawn from the simulation settings from networking module?
-        self.simulation = Simulation(self.players_ids, max_round)
+        self.simulation = Simulation(self.players_ids, max_round, )
 
         # Start the simulation screen
         if self.display_mode == "gui":
