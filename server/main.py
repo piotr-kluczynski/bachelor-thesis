@@ -64,6 +64,7 @@ if __name__ == '__main__':
 
     """
 
+    """
     players = ["Piotrek", "Marcin", "Michał"]
     max_round = 5
     upkeep_round = 3
@@ -75,11 +76,7 @@ if __name__ == '__main__':
         Tile(1, -1, 0),  # Land Between
         Tile(0, 1, -1),  # Land Between
     ]
-    region_between = Region(
-        tiles_between,
-        (0, 0, 0),
-        regionUpkeep=4
-    )
+    region_between = Region(tiles_between, (0, 0, 0), region_upkeep=4)
 
     tiles_q = [
         Tile(0, -1, 1),  # Land of Q
@@ -87,11 +84,7 @@ if __name__ == '__main__':
         Tile(0, -2, 2),  # Land of Q
         Tile(1, -2, 1),  # Land of Q
     ]
-    region_q = Region(
-        tiles_q,
-        (0, -2, 2),
-        owner="Piotrek"
-    )
+    region_q = Region(tiles_q, (0, -2, 2), owner="Piotrek")
 
     tiles_r = [
         Tile(1, 0, -1),  # Land of R
@@ -99,11 +92,7 @@ if __name__ == '__main__':
         Tile(2, -1, -1),  # Land of R
         Tile(1, 1, -2),  # Land of R
     ]
-    region_r = Region(
-        tiles_r,
-        (2, 0, -2),
-        owner="Marcin"
-    )
+    region_r = Region(tiles_r, (2, 0, -2), owner="Marcin")
 
     tiles_s = [
         Tile(-1, 1, 0),  # Land of S
@@ -111,11 +100,7 @@ if __name__ == '__main__':
         Tile(-2, 2, 0),  # Land of S
         Tile(-1, 2, -1)  # Land of S
     ]
-    region_s = Region(
-        tiles_s,
-        (-2, 2, 0),
-        owner="Michał"
-    )
+    region_s = Region(tiles_s, (-2, 2, 0), owner="Michał")
 
     starting_units = {
         (0, -2, 2): [Unit("light_infantry1", "Piotrek", 2, 1, 6)],
@@ -134,6 +119,7 @@ if __name__ == '__main__':
     )
 
     print(simulation.units)
+    """
 
 
     """

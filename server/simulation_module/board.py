@@ -18,7 +18,7 @@ class Board:
         self.tiles = tiles
 
         if regions is None:
-            regions = []
+            regions = {}
         self.regions = regions
 
     def get_tile_by_coord(self, q, r, s):
@@ -34,7 +34,9 @@ class Board:
             for dr in range(max(-radius, -dq - radius), min(radius, -dq + radius) + 1):
                 ds = -dq - dr
 
-                results.append(self.tiles.get((center_tile.q + dq, center_tile.r + dr, center_tile.s + ds)))
+                tile = self.tiles.get((center_tile.q + dq, center_tile.r + dr, center_tile.s + ds))
+                if tile is not None:
+                    results.append(tile)
         return results
 
     def get_neighbours(self, tile):
@@ -52,12 +54,7 @@ class Board:
         return results
 
     def get_owned_regions(self, player):
-        owned_regions = []
-        for region in self.regions:
-            if region.owner == player:
-                owned_regions.append(region)
-
-        return owned_regions
+        return [region for region_id, region in self.regions if region.owner == player]
 
     def find_shortest_path(self, start_tile, end_tile, max_distance, occupancy):
         if calc_distance(start_tile.q, start_tile.r, start_tile.s, end_tile.q, end_tile.r, end_tile.s) > max_distance:
