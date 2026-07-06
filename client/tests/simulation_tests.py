@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from simulation_module.action import Action, ActionType
 from simulation_module.region import Region
-from simulation_module.simulation import Simulation, UNIT_TYPES, PlayerStatus
+from simulation_module.simulation import Simulation, UNIT_TYPES
 from simulation_module.tile import Tile
 from simulation_module.unit import Unit
 
@@ -650,7 +650,37 @@ class TestActionVerification(unittest.TestCase):
 
         result = simulation.verify_unit_ownership(player, player_actions)
         self.assertFalse(result)
-    def test_two_units_same_destination_accepted(self):
+    def test_out_of_range_rejected(self):
+        simulation = prepare_simulation()
+
+        # We add supporting unit
+        simulation.add_unit(
+            "light_infantry",
+            simulation.players[1],
+            0, 0, 0
+        )
+        supporting = simulation.board.get_tile_by_coord(0, 0, 0).unit
+
+        # We add supporting unit
+        simulation.add_unit(
+            "light_infantry",
+            simulation.players[1],
+            -1, 2, -1
+        )
+        supported = simulation.board.get_tile_by_coord(-1, 2, -1).unit
+
+        # We add support order to the unit
+        player_actions = [
+            Action(
+                ActionType.SUPPORT,
+                supporting.unit_id,
+                target_id=supported.unit_id,
+            )
+        ]
+
+        result = simulation.verify_action_range(player_actions, simulation.occupancy)
+        self.assertFalse(result)
+    def test_two_units_same_destination_rejected(self):
         simulation = prepare_simulation()
 
         # We add first moving unit
@@ -685,8 +715,81 @@ class TestActionVerification(unittest.TestCase):
 
         player = simulation.players[1]
 
-        result = simulation.add_player_actions(player, player_actions)
-        self.assertTrue(result)
+        result = simulation.add_player_actions(player_actions)
+        self.assertFalse(result)
+
+class TestObservationAction(unittest.TestCase):
+    def test_observe_unit_sees_full_range(self):
+        simulation = prepare_simulation()
+
+        # We add unit to give orders to
+        simulation.add_unit(
+            "light_infantry",
+            simulation.players[0],
+            0, 0, 0
+        )
+        unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
+
+        view = simulation.observe_unit(unit.unit_id)
+        self.assertEqual(len(view), 37)
+    def test_observe_unit_sees_limited_range(self):
+        simulation = prepare_simulation(radius=2)
+
+        # We add unit to give orders to
+        simulation.add_unit(
+            "light_infantry",
+            simulation.players[0],
+            0, 0, 0
+        )
+        unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
+
+        view = simulation.observe_unit(unit.unit_id)
+        self.assertEqual(len(view), 19)
+    def test_observe_unit_sees_units(self):
+        simulation = prepare_simulation(radius=2)
+
+        # We add unit to give orders to
+        simulation.add_unit(
+            "light_infantry",
+            simulation.players[0],
+            0, 0, 0
+        )
+        unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
+
+        # We add other unit to be observed
+        simulation.add_unit(
+            "light_infantry",
+            simulation.players[1],
+            -2, 1, 1
+        )
+        observed_unit = simulation.board.get_tile_by_coord(-2, 1, 1).unit
+
+        view = simulation.observe_unit(unit.unit_id)
+        observed_units = [tile.unit for tile in view if tile.unit is not None]
+
+        self.assertIn(observed_unit, observed_units)
+    def test_observe_region_sees_full_range(self):
+        simulation = prepare_simulation(radius=1)
+
+        region = simulation.board.regions.get("Dalaran")
+
+        view = simulation.observe_region(region.region_id)
+        self.assertEqual(len(view), 7)
+    def test_observe_region_sees_units(self):
+        simulation = prepare_simulation(radius=2)
+
+        # We add other unit to be observed
+        simulation.add_unit(
+            "light_infantry",
+            simulation.players[1],
+            -2, 1, 1
+        )
+        observed_unit = simulation.board.get_tile_by_coord(-2, 1, 1).unit
+
+        view = simulation.observe_region("Dalaran")
+        observed_units = [tile.unit for tile in view.values() if tile.unit is not None]
+
+        self.assertIn(observed_unit, observed_units)
 
 class TestStartingRound(unittest.TestCase):
     def test_start_round_max_round(self):
@@ -751,24 +854,6 @@ class TestStartingRound(unittest.TestCase):
         )
 
         self.assertEqual(result, (True, True))
-    def test_start_round_units_marked_dead(self):
-        simulation = prepare_simulation(upkeep_round=1)
-
-        simulation.add_unit(
-            "cavalry",
-            simulation.players[0],
-            0, 0, 0
-        )
-        unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
-
-        # We set the player status to EXILED
-        player = simulation.players[0]
-        simulation.players_status[player] = PlayerStatus.EXILED
-
-        new_units = {player_name: [] for player_name in simulation.players}
-        simulation.start_round(new_units)
-
-        self.assertFalse(unit.alive)
 
 class TestEndingRound(unittest.TestCase):
     def test_end_round_clears_dead_units(self):
@@ -782,7 +867,7 @@ class TestEndingRound(unittest.TestCase):
         unit = simulation.board.get_tile_by_coord(0, 0, 0)
         unit.alive = False
 
-        simulation.end_round()
+        simulation.end_round([])
         self.assertNotIn(unit, simulation.units.values())
     def test_end_round_resets_movement(self):
         simulation = prepare_simulation()
@@ -795,7 +880,7 @@ class TestEndingRound(unittest.TestCase):
         unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
         unit.movement_left = 0
 
-        simulation.end_round()
+        simulation.end_round([])
         self.assertEqual(unit.movement_left, unit.movement)
     def test_end_round_clears_supports(self):
         simulation = prepare_simulation()
@@ -818,7 +903,7 @@ class TestEndingRound(unittest.TestCase):
 
         simulation.support_unit(supporting, supported)
 
-        simulation.end_round()
+        simulation.end_round([])
         self.assertEqual([], supported.supporting_units)
     def test_end_round_changes_region_owner(self):
         simulation = prepare_simulation()
@@ -832,213 +917,8 @@ class TestEndingRound(unittest.TestCase):
         # We set region owner to the second player
         simulation.board.regions["Dalaran"].owner = simulation.players[1]
 
-        simulation.end_round()
+        simulation.end_round([])
         self.assertEqual(simulation.board.regions["Dalaran"].owner, simulation.players[0])
-
-class TestPlayerStatusChange(unittest.TestCase):
-    def test_status_change_active_to_lost(self):
-        simulation = prepare_simulation()
-
-        # We set the owner of the region to the first player
-        simulation.board.regions["Dalaran"].owner = simulation.players[0]
-
-        # We create player order for one new unit
-        new_units = { player_name : [] for player_name in simulation.players }
-
-        # Start new round with the new_units order
-        simulation.start_round(new_units)
-
-        player = simulation.players[1]
-        self.assertEqual(simulation.players_status[player], PlayerStatus.LOST)
-    def test_status_change_active_to_exiled(self):
-        simulation = prepare_simulation(upkeep_round=1)
-
-        # We set the owner of the region to the first player
-        simulation.board.regions["Dalaran"].owner = simulation.players[0]
-
-        # We create player order for one new unit
-        new_units = {player_name: [] for player_name in simulation.players}
-
-        # Adding unit to the second player
-        simulation.add_unit(
-            "light_infantry",
-            simulation.players[1],
-            0, 1, -1
-        )
-
-        # Start new round with the new_units order
-        simulation.start_round(new_units)
-
-        player = simulation.players[1]
-        self.assertEqual(simulation.players_status[player], PlayerStatus.EXILED)
-    def test_status_change_exiled_to_lost(self):
-        simulation = prepare_simulation(upkeep_round=1)
-
-        # We set the owner of the region to the first player
-        simulation.board.regions["Dalaran"].owner = simulation.players[0]
-
-        # We create player order for one new unit
-        new_units = {player_name: [] for player_name in simulation.players}
-
-        # Adding unit to the second player
-        simulation.add_unit(
-            "light_infantry",
-            simulation.players[1],
-            0, 1, -1
-        )
-
-        player = simulation.players[1]
-        simulation.players_status[player] = PlayerStatus.EXILED
-
-        # Start new round with the new_units order
-        simulation.start_round(new_units)
-
-        self.assertEqual(simulation.players_status[player], PlayerStatus.LOST)
-    def test_status_change_exiled_to_active(self):
-        simulation = prepare_simulation()
-
-        # We set the owner of the region to the first player
-        simulation.board.regions["Dalaran"].owner = simulation.players[1]
-
-        # We create player order for one new unit
-        new_units = {player_name: [] for player_name in simulation.players}
-
-        # Adding unit to the second player
-        simulation.add_unit(
-            "light_infantry",
-            simulation.players[1],
-            0, 0, 0
-        )
-
-        player = simulation.players[1]
-        simulation.players_status[player] = PlayerStatus.EXILED
-
-        # Start new round with the new_units order
-        simulation.start_round(new_units)
-
-        self.assertEqual(simulation.players_status[player], PlayerStatus.ACTIVE)
-
-class TestEndToEnd(unittest.TestCase):
-    def test_few_turns(self):
-        simulation = prepare_simulation()
-        playerA = simulation.players[0]
-        playerB = simulation.players[1]
-
-        simulation.board.regions["Dalaran"].owner = simulation.players[0]
-
-        # Creating initial armies for both players
-        simulation.add_unit(
-            "light_infantry",
-            simulation.players[0],
-            0, 0, 0
-        )
-        unitA_1 = simulation.board.get_tile_by_coord(0, 0, 0).unit
-        simulation.add_unit(
-            "light_infantry",
-            simulation.players[0],
-            0, -1, 1
-        )
-        unitA_2 = simulation.board.get_tile_by_coord(0, -1, 1).unit
-
-        simulation.add_unit(
-            "heavy_infantry",
-            simulation.players[1],
-            -1, 2, -1
-        )
-        unitB_1 = simulation.board.get_tile_by_coord(-1, 2, -1).unit
-
-        simulation.add_unit(
-            "cavalry",
-            simulation.players[1],
-            0, 3, -3
-        )
-        unitB_2 = simulation.board.get_tile_by_coord(0, 3, -3).unit
-
-        simulation.add_unit(
-            "light_infantry",
-            simulation.players[1],
-            2, 0, -2
-        )
-        unitB_3 = simulation.board.get_tile_by_coord(2, 0, -2).unit
-
-        # Players give orders
-        actions_A = [
-            Action(
-              ActionType.HOLD,
-                unitA_1.unit_id
-            ),
-            Action(
-                ActionType.SUPPORT,
-                unitA_2.unit_id,
-                target_id=unitA_1.unit_id
-            )
-        ]
-        simulation.add_player_actions(playerA, actions_A)
-
-        actions_B = [
-            Action(
-                ActionType.MOVE,
-                unitB_3.unit_id,
-                move_vec=(-1, 0, 1)
-            ),
-            Action(
-                ActionType.MOVE,
-                unitB_1.unit_id,
-                move_vec=(1,- 1, 0)
-            ),
-            Action(
-                ActionType.MOVE,
-                unitB_2.unit_id,
-                move_vec=(-1, -1, 2)
-            )
-        ]
-
-        simulation.add_player_actions(playerB, actions_B)
-
-        # Ending first round
-        simulation.end_round()
-
-        # Starting second round
-        new_units = { player_name : [] for player_name in simulation.players }
-        simulation.start_round(new_units)
-
-        # Players give orders
-        actions_A = [
-            Action(
-              ActionType.HOLD,
-                unitA_1.unit_id
-            ),
-            Action(
-                ActionType.SUPPORT,
-                unitA_2.unit_id,
-                target_id=unitA_1.unit_id
-            )
-        ]
-        simulation.add_player_actions(playerA, actions_A)
-
-        actions_B = [
-            Action(
-                ActionType.ATTACK,
-                unitB_3.unit_id,
-                target_id=unitA_1.unit_id
-            ),
-            Action(
-                ActionType.ATTACK,
-                unitB_1.unit_id,
-                target_id=unitA_1.unit_id
-            ),
-            Action(
-                ActionType.SUPPORT,
-                unitB_2.unit_id,
-                target_id=unitB_1.unit_id
-            )
-        ]
-        simulation.add_player_actions(playerB, actions_B)
-
-        # Ending second round
-        simulation.end_round()
-
-        self.assertTrue(True)
 
 def prepare_simulation(radius=3, max_round=20, upkeep_round=5):
     tiles = {}
@@ -1054,6 +934,7 @@ def prepare_simulation(radius=3, max_round=20, upkeep_round=5):
     )
 
     simulation = Simulation(
+        my_id="Alice",
         players = ["Alice", "Bob"],
         max_round = max_round,
         upkeep_round = upkeep_round,

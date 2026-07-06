@@ -23,9 +23,10 @@ class Simulation:
         self.players_status = {player: PlayerStatus.ACTIVE for player in players}
 
         self.players_actions = {}
+        self.executed_actions = []
+
         self.units = {}
         self.occupancy = {}
-        self.simulated_occupancy = {}
         self.board = Board(tiles, regions)
 
         self.round = 1
@@ -84,9 +85,9 @@ class Simulation:
                                 unit.alive = False
         return True
     def end_round(self):
-        self.simulated_occupancy = {}
-        self.execute_player_actions()
+        self.execute_players_actions()
         self.players_actions = {}
+        self.executed_actions = []
 
         # Removing dead units and rebuilding occupancy
         self.occupancy = {}
@@ -142,7 +143,7 @@ class Simulation:
             return self.support_unit(unit, target_unit)
 
         return False
-    def execute_player_actions(self):
+    def execute_players_actions(self):
         # Choosing random order of players
         player_order = random.sample(self.players, len(self.players))
 
@@ -163,31 +164,9 @@ class Simulation:
 
         all_actions = all_movement_orders + all_support_orders + all_attack_orders
         for action in all_actions:
-            self.execute_action(action)
+            if self.execute_action(action):
+                self.executed_actions.append(action)
 
-    def expand_movement_actions(self, action_list):
-        result = []
-
-        for action in action_list:
-            dq, dr, ds = action.move_vec
-            unit = self.units[action.unit_id]
-            unit_tile = unit.tile
-            target_tile = self.board.get_tile_by_coord(unit_tile.q + dq, unit_tile.r + dr, unit_tile.s + ds)
-
-            path = self.board.find_shortest_path(unit_tile, target_tile, unit.movement_left, self.simulated_occupancy)
-
-            if path is None:
-                return False
-
-            for i in range(0, len(path)-1):
-                move_vec = (path[i+1].q - path[i].q, path[i+1].r - path[i].r, path[i+1].s - path[i].s)
-                result.append(Action(ActionType.MOVE, action.unit_id, move_vec=move_vec))
-
-            # Update simulated occupancy
-            self.simulated_occupancy.pop((unit_tile.q, unit_tile.r, unit_tile.s), None)
-            self.simulated_occupancy[(target_tile.q, target_tile.r, target_tile.s)] = unit
-
-        return result
     def split_actions(self, action_list):
         move_actions = [a for a in action_list if a.unit_action == ActionType.MOVE]
         support_actions = [a for a in action_list if a.unit_action == ActionType.SUPPORT]
@@ -205,22 +184,8 @@ class Simulation:
                 return False
 
         return True
-    def verify_action_range(self, action_list, occupancy):
-        for action in action_list:
-            unit = self.units[action.unit_id]
-            target_unit = self.units[action.target_id]
-
-            unit_q, unit_r, unit_s = [key for key, val in occupancy.items() if val == unit][0]
-            target_q, target_r, target_s = [key for key, val in occupancy.items() if val == target_unit][0]
-
-            if calc_distance(unit_q, unit_r, unit_s, target_q, target_r, target_s) > 1:
-                return False
-        return True
 
     def process_action_list(self, player, action_list):
-        # We create simulated occupancy to predict future unit positions
-        self.simulated_occupancy = self.occupancy.copy()
-
         # Check if every unit received up to 1 action
         if not self.verify_action_uniqueness(action_list):
             return None, None, None
@@ -232,20 +197,7 @@ class Simulation:
         # Divide actions into categories: Movement, Support, Attack
         movement_actions, support_actions, attack_actions = self.split_actions(action_list)
 
-        # Expand movement actions into separate moves
-        expanded_movement_actions = self.expand_movement_actions(movement_actions)
-        if expanded_movement_actions is False:
-            return None, None, None
-
-        # Removing impossible support actions
-        if not self.verify_action_range(support_actions, self.simulated_occupancy):
-            return None, None, None
-
-        # Removing impossible attack actions
-        if not self.verify_action_range(attack_actions, self.simulated_occupancy):
-            return None, None, None
-
-        return expanded_movement_actions, support_actions, attack_actions
+        return movement_actions, support_actions, attack_actions
 
     # CREATING UNITS
     def add_unit(self, unit_type, owner, q, r, s):
@@ -264,13 +216,6 @@ class Simulation:
 
         self.type_counters[unit_type] += 1
         return True
-
-    # OBSERVATION ACTIONS
-    def observe_unit(self, unit_id):
-        unit = self.units[unit_id]
-        return self.board.get_tiles_in_range(unit.tile, 3)
-    def observe_region(self, region_id):
-        return self.board.regions[region_id].tiles
 
     # UNIT ACTIONS
     def move_unit(self, unit, dq, dr, ds):
