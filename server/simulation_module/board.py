@@ -54,7 +54,7 @@ class Board:
         return results
 
     def get_owned_regions(self, player):
-        return [region for region_id, region in self.regions if region.owner == player]
+        return [region for region in self.regions.values() if region.owner == player]
 
     def find_shortest_path(self, start_tile, end_tile, max_distance, occupancy):
         if calc_distance(start_tile.q, start_tile.r, start_tile.s, end_tile.q, end_tile.r, end_tile.s) > max_distance:

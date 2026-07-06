@@ -7,23 +7,21 @@ from simulation_module.simulation import Simulation, UNIT_TYPES, PlayerStatus
 from simulation_module.tile import Tile
 from simulation_module.unit import Unit
 
-
-class TestSimulation(unittest.TestCase):
+class TestPlacingUnits(unittest.TestCase):
     def setUp(self):
         pass
 
-    # PLACING EXISTING UNITS
     def test_place_unit_sets_tile(self):
         simulation = prepare_simulation()
 
         # We add unit to place on different tile
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
 
-        unit = simulation.units[0]
+        unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
         tile = simulation.board.get_tile_by_coord(0, -1, 1)
 
         simulation.place_unit(unit, tile)
@@ -39,23 +37,23 @@ class TestSimulation(unittest.TestCase):
 
         # We add unit to place on different tile
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
 
-        unit = simulation.units[0]
+        unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
         tile = simulation.board.get_tile_by_coord(0, -1, 1)
 
         simulation.place_unit(unit, tile)
-        results = [
+        results = (
             simulation.board.get_tile_by_coord(0, 0, 0).unit is None,
-            (0, 0, 0) not in simulation.occupancy[(tile.q, tile.r, tile.s)].keys()
-        ]
+            (0, 0, 0) not in simulation.occupancy.keys()
+        )
 
         self.assertEqual(results, (True, True))
 
-    # ADDING NEW UNITS
+class TestAddingUnits(unittest.TestCase):
     def test_add_unit_valid(self):
         simulation = prepare_simulation()
 
@@ -70,14 +68,14 @@ class TestSimulation(unittest.TestCase):
         simulation = prepare_simulation()
 
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
 
         # We try to add another unit on the same tile
         result = simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[1],
             0, 0, 0
         )
@@ -96,7 +94,7 @@ class TestSimulation(unittest.TestCase):
     def test_add_unit_all_types(self):
         simulation = prepare_simulation()
 
-        tiles = random.sample(simulation.board.tiles , len(UNIT_TYPES))
+        tiles = random.sample(list(simulation.board.tiles.values()), len(UNIT_TYPES))
 
         results = []
         expected = [True for _ in range(len(UNIT_TYPES))]
@@ -104,20 +102,18 @@ class TestSimulation(unittest.TestCase):
         for tile, unit_type in zip(tiles, UNIT_TYPES):
             results.append(
                 simulation.add_unit(
-                    UNIT_TYPES[unit_type],
+                    unit_type,
                     random.choice(simulation.players),
                     tile.q, tile.r, tile.s
                 )
             )
 
-        self.assertIs(results, expected)
+        self.assertEqual(results, expected)
     def test_add_unit_increments_id(self):
         simulation = prepare_simulation()
 
-        starting_unit_ids = simulation.type_counters.copy()
-
         # Creating one unit of each type
-        tiles = random.sample(simulation.board.tiles, len(UNIT_TYPES))
+        tiles = random.sample(list(simulation.board.tiles.values()), len(UNIT_TYPES))
 
         results = []
         expected = [True for _ in range(len(UNIT_TYPES))]
@@ -125,30 +121,27 @@ class TestSimulation(unittest.TestCase):
         for tile, unit_type in zip(tiles, UNIT_TYPES):
             results.append(
                 simulation.add_unit(
-                    UNIT_TYPES[unit_type],
+                    unit_type,
                     random.choice(simulation.players),
                     tile.q, tile.r, tile.s
                 )
             )
-
-        ending_unit_ids = simulation.type_counters.copy()
-
         self.assertEqual(results, expected)
 
-    # MOVEMENT ACTION
+class TestMovementAction(unittest.TestCase):
     def test_move_unit_valid(self):
         simulation = prepare_simulation()
 
         # Adding unit to test movement on
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
 
         simulation.move_unit(
             simulation.board.get_tile_by_coord(0, 0, 0).unit,
-            0, -1, 1
+            0, 1, -1
         )
 
         self.assertIsNotNone(simulation.board.get_tile_by_coord(0, 1, -1).unit)
@@ -157,14 +150,14 @@ class TestSimulation(unittest.TestCase):
 
         # Adding unit to test movement on
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
 
         # Adding unit to block the target tile
         simulation.add_unit(
-            UNIT_TYPES["cavalry"],
+            "cavalry",
             simulation.players[1],
             0, -1,  1
         )
@@ -180,14 +173,14 @@ class TestSimulation(unittest.TestCase):
 
         # Adding unit to test movement on
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, -1, 1
         )
 
         result = simulation.move_unit(
             simulation.board.get_tile_by_coord(0, -1, 1).unit,
-            0, 1, -1
+            0, -1, 1
         )
 
         self.assertFalse(result)
@@ -196,7 +189,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding unit to test movement on
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
@@ -210,13 +203,13 @@ class TestSimulation(unittest.TestCase):
 
         ending_movement = simulation.board.get_tile_by_coord(0, -1, 1).unit.movement_left
 
-        self.assertEqual(starting_movement, ending_movement)
+        self.assertNotEqual(starting_movement, ending_movement)
     def test_move_unit_no_movement_left(self):
         simulation = prepare_simulation()
 
         # Adding unit to test movement on
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
@@ -225,19 +218,19 @@ class TestSimulation(unittest.TestCase):
         simulation.board.get_tile_by_coord(0, 0, 0).unit.movement_left = 0
 
         result = simulation.move_unit(
-            simulation.board.get_tile_by_coord(0, -1, 1).unit,
+            simulation.board.get_tile_by_coord(0, 0, 0).unit,
             0, -1, 1
         )
 
         self.assertFalse(result)
 
-    # ATTACK ACTION
+class TestAttackAction(unittest.TestCase):
     def test_attack_defender_holds(self):
         simulation = prepare_simulation()
 
         # Adding attacker unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
@@ -246,7 +239,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding defender unit
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[1],
             0, -1, 1
         )
@@ -260,7 +253,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding attacker unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
@@ -269,7 +262,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding defender unit
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[1],
             0, -1, 1
         )
@@ -283,7 +276,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding attacker unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
@@ -292,7 +285,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding defender unit
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[1],
             0, -1, 1
         )
@@ -302,13 +295,13 @@ class TestSimulation(unittest.TestCase):
         defender_id = defender.unit_id
 
         simulation.attack_unit(attacker, defender)
-        self.assertEqual(simulation.units.get(defender_id), None)
+        self.assertFalse(simulation.units.get(defender_id).alive)
     def test_attack_attacker_advances(self):
         simulation = prepare_simulation()
 
         # Adding attacker unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
@@ -317,7 +310,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding defender unit
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[1],
             0, -1, 1
         )
@@ -331,7 +324,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding attacker unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
@@ -339,11 +332,11 @@ class TestSimulation(unittest.TestCase):
 
         # Adding defender unit
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[1],
             0, -2, 2
         )
-        defender = simulation.board.get_tile_by_coord(0, -1, 1).unit
+        defender = simulation.board.get_tile_by_coord(0, -2, 2).unit
 
         result = simulation.attack_unit(attacker, defender)
         self.assertFalse(result)
@@ -352,7 +345,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding attacker unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
@@ -360,7 +353,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding defender unit
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[1],
             0, -1, 1
         )
@@ -370,13 +363,13 @@ class TestSimulation(unittest.TestCase):
         result = simulation.attack_unit(attacker, defender)
         self.assertFalse(result)
 
-    # CHAIN PUSH OPERATION
+class TestChainPush(unittest.TestCase):
     def test_push_single_unit_free_space(self):
         simulation = prepare_simulation()
 
         # Adding attacker unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
@@ -384,7 +377,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding defender unit
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[1],
             0, -1, 1
         )
@@ -397,7 +390,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding attacker unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
@@ -405,7 +398,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding defender unit
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[1],
             0, -1, 1
         )
@@ -413,7 +406,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding another unit behind defender
         simulation.add_unit(
-            UNIT_TYPES["cavalry"],
+            "cavalry",
             simulation.players[1],
             0, -2, 2
         )
@@ -422,62 +415,62 @@ class TestSimulation(unittest.TestCase):
         simulation.push_chain(attacker, defender)
         self.assertEqual(simulation.board.get_tile_by_coord(0, -3, 3).unit, ally)
     def test_push_unit_against_wall(self):
-        simulation = prepare_simulation()
+        simulation = prepare_simulation(radius=1)
 
         # Adding attacker unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
-        attacker = simulation.board.get_tile_by_coord(0, -1, 1).unit
+        attacker = simulation.board.get_tile_by_coord(0, 0, 0).unit
 
         # Adding defender unit
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[1],
             0, -1, 1
         )
-        defender = simulation.board.get_tile_by_coord(0, -2, 2).unit
+        defender = simulation.board.get_tile_by_coord(0, -1, 1).unit
 
         simulation.push_chain(attacker, defender)
-        self.assertNotIn(simulation.units.values(), defender)
+        self.assertFalse(defender.alive)
     def test_push_unit_against_enemy(self):
         simulation = prepare_simulation()
 
         # Adding attacker unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
-        attacker = simulation.board.get_tile_by_coord(0, -1, 1).unit
+        attacker = simulation.board.get_tile_by_coord(0, 0, 0).unit
 
         # Adding defender unit
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[1],
             0, -1, 1
         )
-        defender = simulation.board.get_tile_by_coord(0, -2, 2).unit
+        defender = simulation.board.get_tile_by_coord(0, -1, 1).unit
 
         # Adding another enemy unit behind
         simulation.add_unit(
-            UNIT_TYPES["cavalry"],
+            "cavalry",
             simulation.players[0],
             0, -2, 2
         )
 
         simulation.push_chain(attacker, defender)
-        self.assertNotIn(simulation.units.values(), defender)
+        self.assertFalse(defender.alive)
 
-    # SUPPORT ACTION
+class TestSupportAction(unittest.TestCase):
     def test_support_adds_to_supporting_units(self):
         simulation = prepare_simulation()
 
         # Adding supporting unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
@@ -485,20 +478,20 @@ class TestSimulation(unittest.TestCase):
 
         # Adding supported unit
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[0],
             0, -1, 1
         )
         supported = simulation.board.get_tile_by_coord(0, -1, 1).unit
 
         simulation.support_unit(supporting, supported)
-        self.assertIn(supported.supporting_units, supporting)
+        self.assertIn(supporting, supported.supporting_units)
     def test_support_out_of_range(self):
         simulation = prepare_simulation()
 
         # Adding supporting unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
@@ -506,7 +499,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding supported unit
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[0],
             0, -2, 2
         )
@@ -519,7 +512,7 @@ class TestSimulation(unittest.TestCase):
 
         # Adding supporting unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
@@ -527,22 +520,22 @@ class TestSimulation(unittest.TestCase):
 
         # Adding supported unit
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[0],
             0, -1, 1
         )
         supported = simulation.board.get_tile_by_coord(0, -1, 1).unit
-        supported.isAlive = False
+        supported.alive = False
 
         result = simulation.support_unit(supporting, supported)
         self.assertFalse(result)
 
-    # BOARD FUNCTIONS
+class TestBoardOperations(unittest.TestCase):
     def test_get_tile_invalid_coords(self):
         simulation = prepare_simulation()
 
         result = simulation.board.get_tile_by_coord(3, -1, -1)
-        self.assertIsNotNone(result)
+        self.assertIsNone(result)
     def test_get_neighbour_center(self):
         simulation = prepare_simulation()
 
@@ -572,24 +565,24 @@ class TestSimulation(unittest.TestCase):
         occupancy = simulation.occupancy
 
         path = simulation.board.find_shortest_path(start_tile, end_tile, max_distance=3, occupancy=occupancy)
-        self.assertEqual(len(path), 1)
+        self.assertEqual(len(path), 2)
     def test_find_shortest_path_blocked(self):
         simulation = prepare_simulation()
 
         # We add unit to block path
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, -1, 1
         )
-        occupied_tile = simulation.units.get((0, -1, 1)).tile
+        occupied_tile = simulation.board.get_tile_by_coord(0, -1, 1)
 
         start_tile = simulation.board.get_tile_by_coord(0, 0, 0)
         end_tile = simulation.board.get_tile_by_coord(0, -2, 2)
         occupancy = simulation.occupancy
 
         path = simulation.board.find_shortest_path(start_tile, end_tile, max_distance=10, occupancy=occupancy)
-        self.assertIn(occupied_tile, path)
+        self.assertNotIn(occupied_tile, path)
     def test_find_shortest_path_too_far(self):
         simulation = prepare_simulation(radius=5)
 
@@ -600,17 +593,17 @@ class TestSimulation(unittest.TestCase):
         path = simulation.board.find_shortest_path(start_tile, end_tile, max_distance=3, occupancy=occupancy)
         self.assertIsNone(path)
 
-    # ACTIONS VALIDITY VERIFICATION
+class TestActionVerification(unittest.TestCase):
     def test_duplicate_action_rejected(self):
         simulation = prepare_simulation()
 
         # We add unit to give orders to
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
-        unit = simulation.board.get_tile_by_coord(0, 0, 0)
+        unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
 
         # We add 2 movement orders to the same unit
         player_actions = [
@@ -633,11 +626,11 @@ class TestSimulation(unittest.TestCase):
 
         # We add unit to give orders to
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[1],
             0, 0, 0
         )
-        unit = simulation.board.get_tile_by_coord(0, 0, 0)
+        unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
 
         # We add movement order for the unit
         player = simulation.players[0]
@@ -657,19 +650,19 @@ class TestSimulation(unittest.TestCase):
 
         # We add supporting unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[1],
             0, 0, 0
         )
-        supporting = simulation.board.get_tile_by_coord(0, 0, 0)
+        supporting = simulation.board.get_tile_by_coord(0, 0, 0).unit
 
         # We add supporting unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[1],
             -1, 2, -1
         )
-        supported = simulation.board.get_tile_by_coord(-1, 2, -1)
+        supported = simulation.board.get_tile_by_coord(-1, 2, -1).unit
 
         # We add support order to the unit
         player_actions = [
@@ -680,26 +673,26 @@ class TestSimulation(unittest.TestCase):
             )
         ]
 
-        result = simulation.verify_action_range(player_actions)
+        result = simulation.verify_action_range(player_actions, simulation.occupancy)
         self.assertFalse(result)
     def test_two_units_same_destination_rejected(self):
         simulation = prepare_simulation()
 
         # We add first moving unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[1],
             0, 0, 0
         )
-        unit1 = simulation.board.get_tile_by_coord(0, 0, 0)
+        unit1 = simulation.board.get_tile_by_coord(0, 0, 0).unit
 
         # We add second moving unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[1],
             1, 0, -1
         )
-        unit2 = simulation.board.get_tile_by_coord(1, 0, -1)
+        unit2 = simulation.board.get_tile_by_coord(1, 0, -1).unit
 
         # We add movement orders
         player_actions = [
@@ -711,7 +704,7 @@ class TestSimulation(unittest.TestCase):
             Action(
                 ActionType.MOVE,
                 unit2.unit_id,
-                move_vec=(1, -1, 0)
+                move_vec=(0, -1, 1)
             )
         ]
 
@@ -720,51 +713,51 @@ class TestSimulation(unittest.TestCase):
         result = simulation.add_player_actions(player, player_actions)
         self.assertFalse(result)
 
-    # OBSERVATION ACTIONS
+class TestObservationAction(unittest.TestCase):
     def test_observe_unit_sees_full_range(self):
         simulation = prepare_simulation()
 
         # We add unit to give orders to
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
-        unit = simulation.board.get_tile_by_coord(0, 0, 0)
+        unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
 
         view = simulation.observe_unit(unit.unit_id)
-        self.assertEqual(len(view), 36)
+        self.assertEqual(len(view), 37)
     def test_observe_unit_sees_limited_range(self):
         simulation = prepare_simulation(radius=2)
 
         # We add unit to give orders to
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
-        unit = simulation.board.get_tile_by_coord(0, 0, 0)
+        unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
 
         view = simulation.observe_unit(unit.unit_id)
-        self.assertEqual(len(view), 18)
+        self.assertEqual(len(view), 19)
     def test_observe_unit_sees_units(self):
         simulation = prepare_simulation(radius=2)
 
         # We add unit to give orders to
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
-        unit = simulation.board.get_tile_by_coord(0, 0, 0)
+        unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
 
         # We add other unit to be observed
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[1],
             -2, 1, 1
         )
-        observed_unit = simulation.board.get_tile_by_coord(-2, 1, 1)
+        observed_unit = simulation.board.get_tile_by_coord(-2, 1, 1).unit
 
         view = simulation.observe_unit(unit.unit_id)
         observed_units = [tile.unit for tile in view if tile.unit is not None]
@@ -773,7 +766,7 @@ class TestSimulation(unittest.TestCase):
     def test_observe_region_sees_full_range(self):
         simulation = prepare_simulation(radius=1)
 
-        region = simulation.board.regions.values()[0]
+        region = simulation.board.regions.get("Dalaran")
 
         view = simulation.observe_region(region.region_id)
         self.assertEqual(len(view), 7)
@@ -782,20 +775,18 @@ class TestSimulation(unittest.TestCase):
 
         # We add other unit to be observed
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[1],
             -2, 1, 1
         )
-        observed_unit = simulation.board.get_tile_by_coord(-2, 1, 1)
+        observed_unit = simulation.board.get_tile_by_coord(-2, 1, 1).unit
 
-        region = simulation.board.regions.values()[0]
-
-        view = simulation.observe_region(region.region_id)
-        observed_units = [tile.unit for tile in view if tile.unit is not None]
+        view = simulation.observe_region("Dalaran")
+        observed_units = [tile.unit for tile in view.values() if tile.unit is not None]
 
         self.assertIn(observed_unit, observed_units)
 
-    # STARTING ROUND
+class TestStartingRound(unittest.TestCase):
     def test_start_round_max_round(self):
         simulation = prepare_simulation(max_round=0)
 
@@ -807,7 +798,7 @@ class TestSimulation(unittest.TestCase):
         simulation = prepare_simulation(upkeep_round=1)
 
         # We set the owner of the region to the first player
-        simulation.board.regions[0].owner = simulation.players[0]
+        simulation.board.regions["Dalaran"].owner = simulation.players[0]
 
         # We create player order for one new unit
         new_units = { player_name : [] for player_name in simulation.players }
@@ -822,7 +813,7 @@ class TestSimulation(unittest.TestCase):
 
         # We create new unit to disband
         simulation.add_unit(
-            UNIT_TYPES["cavalry"],
+            "cavalry",
             simulation.players[1],
             1, 0, -1
         )
@@ -836,15 +827,15 @@ class TestSimulation(unittest.TestCase):
         simulation = prepare_simulation()
 
         # We set the owner of the region to the first player
-        simulation.board.regions[0].owner = simulation.players[0]
+        simulation.board.regions["Dalaran"].owner = simulation.players[0]
 
         # We create new unit (which will be kept even though player 1 can't afford it)
         simulation.add_unit(
-            UNIT_TYPES["cavalry"],
+            "cavalry",
             simulation.players[1],
             1, 0, -1
         )
-        unit = simulation.board.get_tile_by_coord(1, 0, -1)
+        unit = simulation.board.get_tile_by_coord(1, 0, -1).unit
 
         # We create player order for one new unit (which shouldn't go through)
         new_units = {player_name: [] for player_name in simulation.players}
@@ -853,7 +844,7 @@ class TestSimulation(unittest.TestCase):
         simulation.start_round(new_units)
 
         result = (
-            True if unit in simulation.units.values() else False,
+            unit.alive,
             True if simulation.board.get_tile_by_coord(0, 0, 0).unit is None else False,
         )
 
@@ -862,11 +853,11 @@ class TestSimulation(unittest.TestCase):
         simulation = prepare_simulation(upkeep_round=1)
 
         simulation.add_unit(
-            UNIT_TYPES["cavalry"],
+            "cavalry",
             simulation.players[0],
             0, 0, 0
         )
-        unit = simulation.board.get_tile_by_coord(0, 0, 0)
+        unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
 
         # We set the player status to EXILED
         player = simulation.players[0]
@@ -877,12 +868,12 @@ class TestSimulation(unittest.TestCase):
 
         self.assertFalse(unit.alive)
 
-    # ENDING ROUND
+class TestEndingRound(unittest.TestCase):
     def test_end_round_clears_dead_units(self):
         simulation = prepare_simulation()
 
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
@@ -895,11 +886,11 @@ class TestSimulation(unittest.TestCase):
         simulation = prepare_simulation()
 
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
-        unit = simulation.board.get_tile_by_coord(0, 0, 0)
+        unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
         unit.movement_left = 0
 
         simulation.end_round()
@@ -909,47 +900,45 @@ class TestSimulation(unittest.TestCase):
 
         # We add supporting unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
-        supporting = simulation.board.get_tile_by_coord(0, 0, 0)
+        supporting = simulation.board.get_tile_by_coord(0, 0, 0).unit
 
         # We add supported unit
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[0],
             -1, 0, 1
         )
-        supported = simulation.board.get_tile_by_coord(-1, 0, 1)
+        supported = simulation.board.get_tile_by_coord(-1, 0, 1).unit
 
         simulation.support_unit(supporting, supported)
-        supporting_list = supported.supporting_units.copy()
 
         simulation.end_round()
-        self.assertEqual(supporting_list, supported.supporting_units)
+        self.assertEqual([], supported.supporting_units)
     def test_end_round_changes_region_owner(self):
         simulation = prepare_simulation()
 
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
-        unit = simulation.board.get_tile_by_coord(0, 0, 0)
 
         # We set region owner to the second player
-        simulation.board.regions[0].owner = simulation.players[1]
+        simulation.board.regions["Dalaran"].owner = simulation.players[1]
 
         simulation.end_round()
-        self.assertEqual(simulation.board.regions[0].owner, simulation.players[0])
+        self.assertEqual(simulation.board.regions["Dalaran"].owner, simulation.players[0])
 
-    # PLAYER STATUS CHANGE
+class TestPlayerStatusChange(unittest.TestCase):
     def test_status_change_active_to_lost(self):
         simulation = prepare_simulation()
 
         # We set the owner of the region to the first player
-        simulation.board.regions[0].owner = simulation.players[0]
+        simulation.board.regions["Dalaran"].owner = simulation.players[0]
 
         # We create player order for one new unit
         new_units = { player_name : [] for player_name in simulation.players }
@@ -963,14 +952,14 @@ class TestSimulation(unittest.TestCase):
         simulation = prepare_simulation(upkeep_round=1)
 
         # We set the owner of the region to the first player
-        simulation.board.regions[0].owner = simulation.players[0]
+        simulation.board.regions["Dalaran"].owner = simulation.players[0]
 
         # We create player order for one new unit
         new_units = {player_name: [] for player_name in simulation.players}
 
         # Adding unit to the second player
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[1],
             0, 1, -1
         )
@@ -984,14 +973,14 @@ class TestSimulation(unittest.TestCase):
         simulation = prepare_simulation(upkeep_round=1)
 
         # We set the owner of the region to the first player
-        simulation.board.regions[0].owner = simulation.players[0]
+        simulation.board.regions["Dalaran"].owner = simulation.players[0]
 
         # We create player order for one new unit
         new_units = {player_name: [] for player_name in simulation.players}
 
         # Adding unit to the second player
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[1],
             0, 1, -1
         )
@@ -1007,14 +996,14 @@ class TestSimulation(unittest.TestCase):
         simulation = prepare_simulation()
 
         # We set the owner of the region to the first player
-        simulation.board.regions[0].owner = simulation.players[1]
+        simulation.board.regions["Dalaran"].owner = simulation.players[1]
 
         # We create player order for one new unit
         new_units = {player_name: [] for player_name in simulation.players}
 
         # Adding unit to the second player
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[1],
             0, 0, 0
         )
@@ -1027,48 +1016,48 @@ class TestSimulation(unittest.TestCase):
 
         self.assertEqual(simulation.players_status[player], PlayerStatus.ACTIVE)
 
-    # END-TO-END
+class TestEndToEnd(unittest.TestCase):
     def test_few_turns(self):
         simulation = prepare_simulation()
         playerA = simulation.players[0]
         playerB = simulation.players[1]
 
-        simulation.board.regions[0].owner = simulation.players[0]
+        simulation.board.regions["Dalaran"].owner = simulation.players[0]
 
         # Creating initial armies for both players
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, 0, 0
         )
-        unitA_1 = simulation.board.get_tile_by_coord(0, 0, 0)
+        unitA_1 = simulation.board.get_tile_by_coord(0, 0, 0).unit
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             0, -1, 1
         )
-        unitA_2 = simulation.board.get_tile_by_coord(0, -1, 1)
+        unitA_2 = simulation.board.get_tile_by_coord(0, -1, 1).unit
 
         simulation.add_unit(
-            UNIT_TYPES["heavy_infantry"],
+            "heavy_infantry",
             simulation.players[1],
             -1, 2, -1
         )
-        unitB_1 = simulation.board.get_tile_by_coord(-1, 2, -1)
+        unitB_1 = simulation.board.get_tile_by_coord(-1, 2, -1).unit
 
         simulation.add_unit(
-            UNIT_TYPES["cavalry"],
+            "cavalry",
             simulation.players[1],
             0, 3, -3
         )
-        unitB_2 = simulation.board.get_tile_by_coord(0, 3, -3)
+        unitB_2 = simulation.board.get_tile_by_coord(0, 3, -3).unit
 
         simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[1],
             2, 0, -2
         )
-        unitB_3 = simulation.board.get_tile_by_coord(2, 0, -2)
+        unitB_3 = simulation.board.get_tile_by_coord(2, 0, -2).unit
 
         # Players give orders
         actions_A = [

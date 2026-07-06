@@ -48,7 +48,7 @@ class Simulation:
             owned_units = [units for units in self.units.values() if units.owner == player]
 
             # Checking if player regained control over some region
-            if self.players_status[player] == PlayerStatus.LOST and len(owned_regions) > 0:
+            if self.players_status[player] == PlayerStatus.EXILED and len(owned_regions) > 0:
                 self.players_status[player] = PlayerStatus.ACTIVE
 
             # Checking if player should automatically lose the game
@@ -104,7 +104,7 @@ class Simulation:
             del self.units[unit_id]
 
         # Checking if any region should change ownership
-        for region in self.board.regions:
+        for region_id, region in self.board.regions.items():
             q, r, s = region.command_centre
             command_centre = self.board.get_tile_by_coord(q, r, s)
 
@@ -205,13 +205,13 @@ class Simulation:
                 return False
 
         return True
-    def verify_action_range(self, action_list):
+    def verify_action_range(self, action_list, occupancy):
         for action in action_list:
             unit = self.units[action.unit_id]
             target_unit = self.units[action.target_id]
 
-            unit_q, unit_r, unit_s = [key for key, val in self.simulated_occupancy.items() if val == unit]
-            target_q, target_r, target_s = [key for key, val in self.simulated_occupancy.items() if val == target_unit]
+            unit_q, unit_r, unit_s = [key for key, val in occupancy.items() if val == unit][0]
+            target_q, target_r, target_s = [key for key, val in occupancy.items() if val == target_unit][0]
 
             if calc_distance(unit_q, unit_r, unit_s, target_q, target_r, target_s) > 1:
                 return False
@@ -238,11 +238,11 @@ class Simulation:
             return None, None, None
 
         # Removing impossible support actions
-        if not self.verify_action_range(support_actions):
+        if not self.verify_action_range(support_actions, self.simulated_occupancy):
             return None, None, None
 
         # Removing impossible attack actions
-        if not self.verify_action_range(attack_actions):
+        if not self.verify_action_range(attack_actions, self.simulated_occupancy):
             return None, None, None
 
         return expanded_movement_actions, support_actions, attack_actions
@@ -409,9 +409,16 @@ class Simulation:
             self.occupancy[(tile.q, tile.r, tile.s)] = unit
     def calculate_supplies(self):
         income = {player: 0 for player in self.players}
-        for region in self.board.regions:
+
+        # We add supply value of each controlled region
+        for region in self.board.regions.values():
             if region.owner is not None:
                 income[region.owner] += region.region_upkeep
+
+        # We detract value of each controlled unit
+        for unit in self.units.values():
+            income[unit.owner] -= unit.upkeep
+
         return income
     def recruit_units(self, player, budget, unit_requests):
         for unit_type, region in zip(unit_requests, self.board.get_owned_regions(player)):
