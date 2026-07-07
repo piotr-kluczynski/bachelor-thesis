@@ -19,6 +19,7 @@ class TestPlacingUnits(unittest.TestCase):
         # We add unit to place on different tile
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -40,6 +41,7 @@ class TestPlacingUnits(unittest.TestCase):
         # We add unit to place on different tile
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -61,6 +63,7 @@ class TestAddingUnits(unittest.TestCase):
 
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -71,6 +74,7 @@ class TestAddingUnits(unittest.TestCase):
 
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -78,6 +82,7 @@ class TestAddingUnits(unittest.TestCase):
         # We try to add another unit on the same tile
         result = simulation.add_unit(
             "heavy_infantry",
+            "heavy_infantry_0",
             simulation.players[1],
             0, 0, 0
         )
@@ -87,7 +92,8 @@ class TestAddingUnits(unittest.TestCase):
         simulation = prepare_simulation()
 
         result = simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             -1, -1, 1
         )
@@ -105,6 +111,7 @@ class TestAddingUnits(unittest.TestCase):
             results.append(
                 simulation.add_unit(
                     unit_type,
+                    f"{unit_type}_0",
                     random.choice(simulation.players),
                     tile.q, tile.r, tile.s
                 )
@@ -124,6 +131,7 @@ class TestAddingUnits(unittest.TestCase):
             results.append(
                 simulation.add_unit(
                     unit_type,
+                    f"{unit_type}_0",
                     random.choice(simulation.players),
                     tile.q, tile.r, tile.s
                 )
@@ -137,6 +145,7 @@ class TestMovementAction(unittest.TestCase):
         # Adding unit to test movement on
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -153,6 +162,7 @@ class TestMovementAction(unittest.TestCase):
         # Adding unit to test movement on
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -160,6 +170,7 @@ class TestMovementAction(unittest.TestCase):
         # Adding unit to block the target tile
         simulation.add_unit(
             "cavalry",
+            "cavalry_0",
             simulation.players[1],
             0, -1,  1
         )
@@ -176,6 +187,7 @@ class TestMovementAction(unittest.TestCase):
         # Adding unit to test movement on
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, -1, 1
         )
@@ -192,6 +204,7 @@ class TestMovementAction(unittest.TestCase):
         # Adding unit to test movement on
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -212,6 +225,7 @@ class TestMovementAction(unittest.TestCase):
         # Adding unit to test movement on
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -235,6 +249,7 @@ class TestAttackAction(unittest.TestCase):
         # Adding attacker unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -243,6 +258,7 @@ class TestAttackAction(unittest.TestCase):
         # Adding defender unit
         simulation.add_unit(
             "heavy_infantry",
+            "heavy_infantry_0",
             simulation.players[1],
             0, -1, 1
         )
@@ -258,6 +274,7 @@ class TestAttackAction(unittest.TestCase):
         # Adding attacker unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -266,6 +283,7 @@ class TestAttackAction(unittest.TestCase):
         # Adding defender unit
         simulation.add_unit(
             "heavy_infantry",
+            "heavy_infantry_0",
             simulation.players[1],
             0, -1, 1
         )
@@ -281,6 +299,7 @@ class TestAttackAction(unittest.TestCase):
         # Adding attacker unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -289,6 +308,7 @@ class TestAttackAction(unittest.TestCase):
         # Adding defender unit
         simulation.add_unit(
             "heavy_infantry",
+            "heavy_infantry_0",
             simulation.players[1],
             0, -1, 1
         )
@@ -306,6 +326,7 @@ class TestAttackAction(unittest.TestCase):
         # Adding attacker unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -315,6 +336,7 @@ class TestAttackAction(unittest.TestCase):
         # Adding defender unit
         simulation.add_unit(
             "heavy_infantry",
+            "heavy_infantry_0",
             simulation.players[1],
             0, -1, 1
         )
@@ -330,6 +352,7 @@ class TestAttackAction(unittest.TestCase):
         # Adding attacker unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -338,6 +361,7 @@ class TestAttackAction(unittest.TestCase):
         # Adding defender unit
         simulation.add_unit(
             "heavy_infantry",
+            "heavy_infantry_0",
             simulation.players[1],
             0, -2, 2
         )
@@ -351,6 +375,7 @@ class TestAttackAction(unittest.TestCase):
         # Adding attacker unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -359,6 +384,7 @@ class TestAttackAction(unittest.TestCase):
         # Adding defender unit
         simulation.add_unit(
             "heavy_infantry",
+            "heavy_infantry_0",
             simulation.players[1],
             0, -1, 1
         )
@@ -375,6 +401,7 @@ class TestChainPush(unittest.TestCase):
         # Adding attacker unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -383,6 +410,7 @@ class TestChainPush(unittest.TestCase):
         # Adding defender unit
         simulation.add_unit(
             "heavy_infantry",
+            "heavy_infantry_0",
             simulation.players[1],
             0, -1, 1
         )
@@ -396,6 +424,7 @@ class TestChainPush(unittest.TestCase):
         # Adding attacker unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -404,6 +433,7 @@ class TestChainPush(unittest.TestCase):
         # Adding defender unit
         simulation.add_unit(
             "heavy_infantry",
+            "heavy_infantry_0",
             simulation.players[1],
             0, -1, 1
         )
@@ -412,6 +442,7 @@ class TestChainPush(unittest.TestCase):
         # Adding another unit behind defender
         simulation.add_unit(
             "cavalry",
+            "cavalry_0",
             simulation.players[1],
             0, -2, 2
         )
@@ -425,6 +456,7 @@ class TestChainPush(unittest.TestCase):
         # Adding attacker unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -433,6 +465,7 @@ class TestChainPush(unittest.TestCase):
         # Adding defender unit
         simulation.add_unit(
             "heavy_infantry",
+            "heavy_infantry_0",
             simulation.players[1],
             0, -1, 1
         )
@@ -446,6 +479,7 @@ class TestChainPush(unittest.TestCase):
         # Adding attacker unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -454,6 +488,7 @@ class TestChainPush(unittest.TestCase):
         # Adding defender unit
         simulation.add_unit(
             "heavy_infantry",
+            "heavy_infantry_0",
             simulation.players[1],
             0, -1, 1
         )
@@ -462,6 +497,7 @@ class TestChainPush(unittest.TestCase):
         # Adding another enemy unit behind
         simulation.add_unit(
             "cavalry",
+            "cavalry_0",
             simulation.players[0],
             0, -2, 2
         )
@@ -476,6 +512,7 @@ class TestSupportAction(unittest.TestCase):
         # Adding supporting unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -484,6 +521,7 @@ class TestSupportAction(unittest.TestCase):
         # Adding supported unit
         simulation.add_unit(
             "heavy_infantry",
+            "heavy__infantry_0",
             simulation.players[0],
             0, -1, 1
         )
@@ -497,6 +535,7 @@ class TestSupportAction(unittest.TestCase):
         # Adding supporting unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -505,6 +544,7 @@ class TestSupportAction(unittest.TestCase):
         # Adding supported unit
         simulation.add_unit(
             "heavy_infantry",
+            "heavy_infantry_0",
             simulation.players[0],
             0, -2, 2
         )
@@ -518,6 +558,7 @@ class TestSupportAction(unittest.TestCase):
         # Adding supporting unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -526,6 +567,7 @@ class TestSupportAction(unittest.TestCase):
         # Adding supported unit
         simulation.add_unit(
             "heavy_infantry",
+            "heavy_infantry_0",
             simulation.players[0],
             0, -1, 1
         )
@@ -577,6 +619,7 @@ class TestBoardOperations(unittest.TestCase):
         # We add unit to block path
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, -1, 1
         )
@@ -605,6 +648,7 @@ class TestActionVerification(unittest.TestCase):
         # We add unit to give orders to
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -632,6 +676,7 @@ class TestActionVerification(unittest.TestCase):
         # We add unit to give orders to
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[1],
             0, 0, 0
         )
@@ -656,6 +701,7 @@ class TestActionVerification(unittest.TestCase):
         # We add supporting unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[1],
             0, 0, 0
         )
@@ -664,6 +710,7 @@ class TestActionVerification(unittest.TestCase):
         # We add supporting unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_1",
             simulation.players[1],
             -1, 2, -1
         )
@@ -686,6 +733,7 @@ class TestActionVerification(unittest.TestCase):
         # We add first moving unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[1],
             0, 0, 0
         )
@@ -694,6 +742,7 @@ class TestActionVerification(unittest.TestCase):
         # We add second moving unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_1",
             simulation.players[1],
             1, 0, -1
         )
@@ -725,6 +774,7 @@ class TestObservationAction(unittest.TestCase):
         # We add unit to give orders to
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -738,6 +788,7 @@ class TestObservationAction(unittest.TestCase):
         # We add unit to give orders to
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -751,6 +802,7 @@ class TestObservationAction(unittest.TestCase):
         # We add unit to give orders to
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -759,6 +811,7 @@ class TestObservationAction(unittest.TestCase):
         # We add other unit to be observed
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_1",
             simulation.players[1],
             -2, 1, 1
         )
@@ -781,6 +834,7 @@ class TestObservationAction(unittest.TestCase):
         # We add other unit to be observed
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[1],
             -2, 1, 1
         )
@@ -797,63 +851,8 @@ class TestStartingRound(unittest.TestCase):
 
         new_units = { player_name : [] for player_name in simulation.players }
 
-        result = simulation.start_round(new_units)
+        result = simulation.start_round()
         self.assertFalse(result)
-    def test_start_round_spawns_units(self):
-        simulation = prepare_simulation(upkeep_round=1)
-
-        # We set the owner of the region to the first player
-        simulation.board.regions["Dalaran"].owner = simulation.players[0]
-
-        # We create player order for one new unit
-        new_units = { player_name : [] for player_name in simulation.players }
-        new_units[simulation.players[0]].append("light_infantry")
-
-        # Start new round with the new_units order
-        simulation.start_round(new_units)
-
-        self.assertIsNotNone(simulation.board.get_tile_by_coord(0, 0, 0).unit)
-    def test_start_round_disbands_unit(self):
-        simulation = prepare_simulation(upkeep_round=1)
-
-        # We create new unit to disband
-        simulation.add_unit(
-            "cavalry",
-            simulation.players[1],
-            1, 0, -1
-        )
-        unit = simulation.board.get_tile_by_coord(1, 0, -1)
-
-        new_units = { player_name : [] for player_name in simulation.players }
-
-        simulation.start_round(new_units)
-        self.assertNotIn(unit, simulation.units.values())
-    def test_start_round_non_upkeep(self):
-        simulation = prepare_simulation()
-
-        # We set the owner of the region to the first player
-        simulation.board.regions["Dalaran"].owner = simulation.players[0]
-
-        # We create new unit (which will be kept even though player 1 can't afford it)
-        simulation.add_unit(
-            "cavalry",
-            simulation.players[1],
-            1, 0, -1
-        )
-        unit = simulation.board.get_tile_by_coord(1, 0, -1).unit
-
-        # We create player order for one new unit (which shouldn't go through)
-        new_units = {player_name: [] for player_name in simulation.players}
-        new_units[simulation.players[0]].append("light_infantry")
-
-        simulation.start_round(new_units)
-
-        result = (
-            unit.alive,
-            True if simulation.board.get_tile_by_coord(0, 0, 0).unit is None else False,
-        )
-
-        self.assertEqual(result, (True, True))
 
 class TestEndingRound(unittest.TestCase):
     def test_end_round_clears_dead_units(self):
@@ -861,26 +860,28 @@ class TestEndingRound(unittest.TestCase):
 
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
         unit = simulation.board.get_tile_by_coord(0, 0, 0)
         unit.alive = False
 
-        simulation.end_round([])
+        simulation.end_round()
         self.assertNotIn(unit, simulation.units.values())
     def test_end_round_resets_movement(self):
         simulation = prepare_simulation()
 
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
         unit = simulation.board.get_tile_by_coord(0, 0, 0).unit
         unit.movement_left = 0
 
-        simulation.end_round([])
+        simulation.end_round()
         self.assertEqual(unit.movement_left, unit.movement)
     def test_end_round_clears_supports(self):
         simulation = prepare_simulation()
@@ -888,6 +889,7 @@ class TestEndingRound(unittest.TestCase):
         # We add supporting unit
         simulation.add_unit(
             "light_infantry",
+            "light_infantry_0",
             simulation.players[0],
             0, 0, 0
         )
@@ -896,6 +898,7 @@ class TestEndingRound(unittest.TestCase):
         # We add supported unit
         simulation.add_unit(
             "heavy_infantry",
+            "heavy_infantry_0",
             simulation.players[0],
             -1, 0, 1
         )
@@ -903,22 +906,8 @@ class TestEndingRound(unittest.TestCase):
 
         simulation.support_unit(supporting, supported)
 
-        simulation.end_round([])
+        simulation.end_round()
         self.assertEqual([], supported.supporting_units)
-    def test_end_round_changes_region_owner(self):
-        simulation = prepare_simulation()
-
-        simulation.add_unit(
-            "light_infantry",
-            simulation.players[0],
-            0, 0, 0
-        )
-
-        # We set region owner to the second player
-        simulation.board.regions["Dalaran"].owner = simulation.players[1]
-
-        simulation.end_round([])
-        self.assertEqual(simulation.board.regions["Dalaran"].owner, simulation.players[0])
 
 def prepare_simulation(radius=3, max_round=20, upkeep_round=5):
     tiles = {}

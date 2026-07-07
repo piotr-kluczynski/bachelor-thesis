@@ -12,10 +12,16 @@ UNIT_TYPES = {
     "cavalry": (3, 3, 6)
 }
 
+class PlayerStatus(Enum):
+    ACTIVE = "Active"
+    EXILED = "Exiled"
+    LOST = "Lost"
+
 class Simulation:
     def __init__(self, my_id, players, max_round, upkeep_round, tiles, regions):
         self.my_id =my_id
         self.players = players
+        self.players_status = {player: PlayerStatus.ACTIVE for player in players}
 
         self.my_actions = []
         self.units = {}
@@ -27,39 +33,43 @@ class Simulation:
         self.max_round = max_round
         self.upkeep_round = upkeep_round
 
-        self.type_counters = {unit_type: 0 for unit_type in UNIT_TYPES}
-
     # TURN MANAGEMENT
-    def start_round(self, new_units=None):
+    def start_round(self):
         self.round += 1
         if self.round > self.max_round:
             return False
-
-        if new_units is None:
-            new_units = { player: [] for player in self.players }
-
-        for player in self.players:
-            owned_regions = self.board.get_owned_regions(player)
-            owned_units = [units for units in self.units.values() if units.owner == player]
-
-        # If the round is the upkeep round
-        if self.round % self.upkeep_round == 0:
-
-            # Recruiting/Disbanding units
-            income = self.calculate_supplies()
-
-            for player in self.players:
-                score = income[player]
-                if score > 0:
-                    self.recruit_units(player, score, new_units.get(player, []))
-                elif score < 0:
-                    self.disband_units(player, score)
-
         return True
-    def end_round(self, server_actions):
+    def synchronize_game_state(self, simulation_updates):
+        for update in simulation_updates:
+            if update["type"] == "unit_death":
+                unit_id = update["unit_id"]
+
+                self.units[unit_id].alive = False
+            elif update["type"] == "unit_move":
+                unit_id = update["unit_id"]
+                new_q, new_r, new_s = update["new_q"], update["new_r"], update["new_s"]
+
+                self.place_unit(self.units[unit_id], self.board.get_tile_by_coord(new_q, new_r, new_s))
+            elif update["type"] == "unit_spawn":
+                unit_type = update["unit_type"]
+                unit_id = update["unit_id"]
+                owner = update["owner"]
+                q, r, s = update["q"], update["r"], update["s"]
+
+                self.add_unit(unit_type, unit_id, owner, q, r, s)
+            elif update["type"] == "player_status_change":
+                player = update["player"]
+                new_status = update["new_status"]
+
+                self.players_status[player] = new_status
+            elif update["type"] == "region_owner_change":
+                region_id = update["region_id"]
+                new_owner = update["new_owner"]
+
+                self.board.regions[region_id].owner = new_owner
+    def end_round(self):
         self.simulated_occupancy = {}
-        self.execute_server_actions(server_actions)
-        self.my_actions = {}
+        self.my_actions = []
 
         # Removing dead units and rebuilding occupancy
         self.occupancy = {}
@@ -74,51 +84,17 @@ class Simulation:
 
         for unit_id in dead_units:
             self.units[unit_id].tile = None
+            self.units[unit_id].tile.unit = None
             del self.units[unit_id]
 
-        # Checking if any region should change ownership
-        for region_id, region in self.board.regions.items():
-            q, r, s = region.command_centre
-            command_centre = self.board.get_tile_by_coord(q, r, s)
-
-            if command_centre.unit is not None:
-                unit_owner = command_centre.unit.owner
-                region_owner = region.owner
-
-                if unit_owner != region_owner:
-                    region.owner = unit_owner
-
-    # PROCESSING PLAYER ACTIONS
+    # PREPARING PLAYER ACTIONS
     def add_player_actions(self, action_list):
         movement_actions, support_actions, attack_actions = self.process_action_list(action_list)
         if movement_actions is None:
             return False
 
-        self.my_actions = (movement_actions, support_actions, attack_actions)
+        self.my_actions = movement_actions + support_actions + attack_actions
         return True
-    def execute_action(self, action):
-        unit = self.units[action.unit_id]
-
-        if action.unit_action == ActionType.HOLD:
-            return True
-
-        if action.unit_action == ActionType.MOVE:
-            q, r, s = action.move_vec
-            return self.move_unit(unit, q, r, s)
-
-        target_unit = self.units[action.target_id]
-
-        if action.unit_action == ActionType.ATTACK:
-            return self.attack_unit(unit, target_unit)
-
-        if action.unit_action == ActionType.SUPPORT:
-            return self.support_unit(unit, target_unit)
-
-        return False
-    def execute_server_actions(self, server_actions):
-        for action in server_actions:
-            self.execute_action(action)
-
     def expand_movement_actions(self, action_list):
         result = []
 
@@ -164,8 +140,14 @@ class Simulation:
             unit = self.units[action.unit_id]
             target_unit = self.units[action.target_id]
 
-            unit_q, unit_r, unit_s = [key for key, val in occupancy.items() if val == unit][0]
-            target_q, target_r, target_s = [key for key, val in occupancy.items() if val == target_unit][0]
+            unit_coords = [key for key, val in occupancy.items() if val == unit]
+            target_coords = [key for key, val in occupancy.items() if val == target_unit]
+
+            if not unit_coords or not target_coords:
+                return False
+
+            unit_q, unit_r, unit_s = unit_coords[0]
+            target_q, target_r, target_s = target_coords[0]
 
             if calc_distance(unit_q, unit_r, unit_s, target_q, target_r, target_s) > 1:
                 return False
@@ -202,21 +184,18 @@ class Simulation:
         return expanded_movement_actions, support_actions, attack_actions
 
     # CREATING UNITS
-    def add_unit(self, unit_type, owner, q, r, s):
+    def add_unit(self, unit_type, unit_id, owner, q, r, s):
         tile = self.board.get_tile_by_coord(q, r, s)
         if tile is None or tile.unit is not None:
             return False
 
         # Creating the new unit
         movement, upkeep, strength = UNIT_TYPES[unit_type]
-        unit_id = f"{unit_type}_{self.type_counters[unit_type]}"
         unit = Unit(unit_id, owner, movement, upkeep, strength)
         self.units[unit_id] = unit
 
         # Placing the unit on the new position
         self.place_unit(unit, tile)
-
-        self.type_counters[unit_type] += 1
         return True
 
     # OBSERVATION ACTIONS
@@ -225,78 +204,6 @@ class Simulation:
         return self.board.get_tiles_in_range(unit.tile, 3)
     def observe_region(self, region_id):
         return self.board.regions[region_id].tiles
-
-    # UNIT ACTIONS
-    def move_unit(self, unit, dq, dr, ds):
-        # Checking if unit has any movement left
-        if unit.movement_left < 1:
-            return False
-
-        # Check if the target tile exists
-        current_tile = unit.tile
-
-        new_q = current_tile.q + dq
-        new_r = current_tile.r + dr
-        new_s = current_tile.s + ds
-
-        target_tile = self.board.get_tile_by_coord(new_q, new_r, new_s)
-        if target_tile is None:
-            return False
-
-        # Check if the target tile isn't already occupied
-        if target_tile.unit is not None:
-            return False
-
-        # Move unit to the target tile
-        target_tile.unit = unit
-        unit.movement_left -= 1
-
-        unit.tile = target_tile
-        current_tile.unit = None
-        return True
-    def attack_unit(self, unit1, unit2):
-        tile1 = unit1.tile
-        tile2 = unit2.tile
-
-        if calc_distance(tile1.q, tile1.r, tile1.s, tile2.q, tile2.r, tile2.s) > 1:
-            return False
-
-        if not unit2.alive:
-            return False
-
-        attack_power = random.randint(1, unit1.strength) + 2 * len(unit1.supporting_units)
-        defend_power = random.randint(1, unit2.strength) + 2 * len(unit2.supporting_units)
-
-        if defend_power >= attack_power:
-            # Defenders stand their ground
-            return True
-        else:
-            if 2*defend_power <= attack_power:
-                # Defenders are completely destroyed
-                unit2.alive = False
-                return True
-
-            unit2_old_tile = unit2.tile
-
-            # Defenders were defeated and fall back
-            self.push_chain(unit1, unit2)
-
-            # Attacker advances in the created free spot
-            self.place_unit(unit1, unit2_old_tile)
-
-            return True
-    def support_unit(self, unit1, unit2):
-        tile1 = unit1.tile
-        tile2 = unit2.tile
-
-        if calc_distance(tile1.q, tile1.r, tile1.s, tile2.q, tile2.r, tile2.s) > 1:
-            return False
-
-        if not unit2.alive:
-            return False
-
-        unit2.supporting_units.append(unit1)
-        return True
 
     # UTILITIES
     def push_chain(self, unit1, unit2):
@@ -361,41 +268,3 @@ class Simulation:
         if tile is not None:
             tile.unit = unit
             self.occupancy[(tile.q, tile.r, tile.s)] = unit
-    def calculate_supplies(self):
-        income = {player: 0 for player in self.players}
-
-        # We add supply value of each controlled region
-        for region in self.board.regions.values():
-            if region.owner is not None:
-                income[region.owner] += region.region_upkeep
-
-        # We detract value of each controlled unit
-        for unit in self.units.values():
-            income[unit.owner] -= unit.upkeep
-
-        return income
-    def recruit_units(self, player, budget, unit_requests):
-        for unit_type, region in zip(unit_requests, self.board.get_owned_regions(player)):
-            cost = UNIT_TYPES[unit_type][1]
-
-            if budget < cost:
-                break
-
-            q, r, s = region.command_centre
-            if self.add_unit(unit_type, player, q, r, s):
-                budget -= cost
-    def disband_units(self, player, deficit):
-        units_to_remove = []
-
-        for unit in list(self.units.values()):
-            if deficit >= 0:
-                break
-
-            if unit.owner == player:
-                deficit += unit.upkeep
-                units_to_remove.append(unit)
-
-        for unit in units_to_remove:
-            self.place_unit(unit, None)
-            unit.alive = False
-            del self.units[unit.unit_id]

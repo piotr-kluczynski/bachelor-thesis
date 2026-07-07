@@ -87,7 +87,7 @@ class TestAddingUnits(unittest.TestCase):
         simulation = prepare_simulation()
 
         result = simulation.add_unit(
-            UNIT_TYPES["light_infantry"],
+            "light_infantry",
             simulation.players[0],
             -1, -1, 1
         )

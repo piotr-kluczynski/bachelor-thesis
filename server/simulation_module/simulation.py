@@ -3,7 +3,7 @@ from enum import Enum
 
 from simulation_module.board import Board
 from simulation_module.unit import Unit
-from simulation_module.action import Action, ActionType
+from simulation_module.action import ActionType
 from simulation_module.utils import calc_distance
 
 UNIT_TYPES = {
@@ -35,8 +35,13 @@ class Simulation:
 
         self.type_counters = {unit_type: 0 for unit_type in UNIT_TYPES}
 
+        self.round_updates = []
+
     # TURN MANAGEMENT
     def start_round(self, new_units=None):
+        # Clearing the array of the updates to the game state that happen during this round
+        self.round_updates = []
+
         self.round += 1
         if self.round > self.max_round:
             return False
@@ -52,9 +57,16 @@ class Simulation:
             if self.players_status[player] == PlayerStatus.EXILED and len(owned_regions) > 0:
                 self.players_status[player] = PlayerStatus.ACTIVE
 
+                # Registering the status change
+                self.record_update("player_status_change", player=player, new_status="Active")
+
             # Checking if player should automatically lose the game
             if len(owned_regions) == 0 and len(owned_units) == 0:
                 self.players_status[player] = PlayerStatus.LOST
+
+                # Registering the status change
+                self.record_update("player_status_change", player=player, new_status="Lost")
+
 
         # If the round is the upkeep round
         if self.round % self.upkeep_round == 0:
@@ -76,13 +88,23 @@ class Simulation:
                 if len(owned_regions) == 0:
                     if player_status == PlayerStatus.ACTIVE:
                         self.players_status[player] = PlayerStatus.EXILED
+
+                        # Registering the status change
+                        self.record_update("player_status_change", player=player, new_status="Exiled")
+
+
                     elif player_status == PlayerStatus.EXILED:
                         self.players_status[player] = PlayerStatus.LOST
+
+                        # Registering the status change
+                        self.record_update("player_status_change", player=player, new_status="Lost")
 
                         # Killing off all units from the finished player
                         for _, unit in self.units.items():
                             if unit.owner == player:
                                 unit.alive = False
+
+                                self.record_update("unit_death", unit_id=unit.unit_id)
         return True
     def end_round(self):
         self.execute_players_actions()
@@ -102,6 +124,7 @@ class Simulation:
 
         for unit_id in dead_units:
             self.units[unit_id].tile = None
+            self.units[unit_id].tile.unit = None
             del self.units[unit_id]
 
         # Checking if any region should change ownership
@@ -115,6 +138,9 @@ class Simulation:
 
                 if unit_owner != region_owner:
                     region.owner = unit_owner
+
+                    # Registering the ownership change
+                    self.record_update("region_owner_change", region_id=region.region_id, new_owner=unit_owner)
 
     # PROCESSING PLAYER ACTIONS
     def add_player_actions(self, player, action_list):
@@ -211,6 +237,9 @@ class Simulation:
         unit = Unit(unit_id, owner, movement, upkeep, strength)
         self.units[unit_id] = unit
 
+        # Registering new unit
+        self.record_update("unit_spawn", unit_type=unit_type, unit_id=unit_id, owner=owner, q=q, r=r, s=s)
+
         # Placing the unit on the new position
         self.place_unit(unit, tile)
 
@@ -244,6 +273,10 @@ class Simulation:
 
         unit.tile = target_tile
         current_tile.unit = None
+
+        # Registering the unit movement
+        self.record_update("unit_move", unit_id=unit.unit_id, new_q=new_q, new_r=new_r, new_s=new_s)
+
         return True
     def attack_unit(self, unit1, unit2):
         tile1 = unit1.tile
@@ -265,6 +298,7 @@ class Simulation:
             if 2*defend_power <= attack_power:
                 # Defenders are completely destroyed
                 unit2.alive = False
+                self.record_update("unit_death", unit_id=unit2.unit_id)
                 return True
 
             unit2_old_tile = unit2.tile
@@ -274,6 +308,9 @@ class Simulation:
 
             # Attacker advances in the created free spot
             self.place_unit(unit1, unit2_old_tile)
+
+            # Registering the unit movement
+            self.record_update("unit_move", unit_id=unit1.unit_id, new_q=unit2_old_tile.q, new_r=unit2_old_tile.r, new_s=unit2_old_tile.s)
 
             return True
     def support_unit(self, unit1, unit2):
@@ -327,6 +364,7 @@ class Simulation:
         # If there's no space to fall back, the unit dies
         if not can_escape:
             unit2.alive = False
+            self.record_update("unit_death", unit_id=unit2.unit_id)
             return True
 
         # Moving to the back
@@ -340,6 +378,9 @@ class Simulation:
             )
 
             self.place_unit(unit, new_tile)
+
+            # Registering the unit movement
+            self.record_update("unit_move", unit_id=unit.unit_id, new_q=old_tile.q + dq, new_r=old_tile.r + dr, new_s=old_tile.s + ds)
         return True
     def place_unit(self, unit, tile):
         # We remove the old tile
@@ -389,4 +430,7 @@ class Simulation:
         for unit in units_to_remove:
             self.place_unit(unit, None)
             unit.alive = False
+            self.record_update("unit_death", unit_id=unit.unit_id)
             del self.units[unit.unit_id]
+    def record_update(self, update_type, **kwargs):
+        self.round_updates.append({"type": update_type, **kwargs})
