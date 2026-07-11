@@ -1,9 +1,9 @@
 import tkinter as tk
 
-from display_module.gui.simulation.board_panel import BoardPanel
-from display_module.gui.simulation.interaction_panel import InteractionPanel
-from display_module.gui.simulation.simulation_context import SimulationContext
-from display_module.gui.simulation.top_bar import TopBar
+from display_module.simulation.board_panel import BoardPanel
+from display_module.simulation.interaction_panel import InteractionPanel
+from display_module.simulation.simulation_context import SimulationContext
+from display_module.simulation.top_bar import TopBar
 
 
 class SimulationScreen(tk.Frame):

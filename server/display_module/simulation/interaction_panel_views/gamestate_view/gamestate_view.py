@@ -1,7 +1,7 @@
 import tkinter as tk
 
-from display_module.gui.simulation.interaction_panel_views.gamestate_view.region_card import RegionCard
-from display_module.gui.simulation.interaction_panel_views.gamestate_view.unit_card import UnitCard
+from display_module.simulation.interaction_panel_views.gamestate_view.region_card import RegionCard
+from display_module.simulation.interaction_panel_views.gamestate_view.unit_card import UnitCard
 
 
 class GamestateView(tk.Frame):

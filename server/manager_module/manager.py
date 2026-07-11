@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from display_module.gui.simulation.simulation_screen import SimulationScreen
+from display_module.simulation.simulation_screen import SimulationScreen
 from simulation_module.simulation import Simulation
 
 

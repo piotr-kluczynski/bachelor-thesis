@@ -1,16 +1,16 @@
-# This is a sample Python script.
+import tkinter as tk
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+from display_module.join_menu.join_menu_screen import JoinMenuScreen
+from display_module.main_menu.main_menu_screen import MainMenuScreen
 
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    root = tk.Tk()
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    root.title("Simulation")
+    root.geometry("1000x500")
+    root.minsize(1000, 500)
+
+    screen = JoinMenuScreen(root)
+    screen.pack(fill="both", expand=True)
+
+    root.mainloop()

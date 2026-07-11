@@ -1,5 +1,5 @@
 import tkinter as tk
-from display_module.gui.simulation.interaction_panel_views.actions_view.action_card import ActionCard
+from display_module.simulation.interaction_panel_views.actions_view.action_card import ActionCard
 
 class ActionsView(tk.Frame):
     def __init__(self, parent, context):

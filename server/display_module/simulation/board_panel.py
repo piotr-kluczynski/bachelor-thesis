@@ -1,7 +1,7 @@
 import math
 import tkinter as tk
 
-from display_module.gui.simulation.unit_info_panel import UnitInfoPanel
+from display_module.simulation.unit_info_panel import UnitInfoPanel
 
 HEX_SIZE = 40
 

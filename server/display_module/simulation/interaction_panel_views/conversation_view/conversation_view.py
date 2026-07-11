@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from display_module.gui.simulation.interaction_panel_views.conversation_view.chat_panel import ChatPanel
+from display_module.simulation.interaction_panel_views.conversation_view.chat_panel import ChatPanel
 
 class ConversationView(tk.Frame):
     def __init__(self, parent, context):

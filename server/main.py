@@ -1,12 +1,3 @@
-import tkinter as tk
-from display_module.gui.simulation.simulation_screen import SimulationScreen
-from network_module.networkModule import NetworkModule
-from simulation_module.board import Board
-from simulation_module.region import Region
-from simulation_module.simulation import Simulation
-from simulation_module.tile import Tile
-from simulation_module.unit import Unit
-
 # Define constants
 CLIENT_PORT = 12345
 

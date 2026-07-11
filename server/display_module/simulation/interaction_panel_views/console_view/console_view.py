@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from display_module.gui.simulation.interaction_panel_views.console_view.console_panel import ConsolePanel
+from display_module.simulation.interaction_panel_views.console_view.console_panel import ConsolePanel
 
 class ConsoleView(tk.Frame):
     def __init__(self, parent, context):
