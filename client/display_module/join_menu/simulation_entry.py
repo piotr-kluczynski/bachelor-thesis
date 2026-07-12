@@ -7,57 +7,87 @@ SECONDARY_COLOR = "#b0b0b0"
 ACCENT_COLOR = "#3b3b3b"
 
 class SimulationEntry(tk.Frame):
-    def __init__(self, parent, name, noPlayers, maxNoPlayers):
+    def __init__(self, parent, name, no_players, max_no_players):
         tk.Frame.__init__(self, parent)
 
         self.configure(bg=BACKGROUND_COLOR)
 
-        # 1. Title of the simulation
+        self.grid_rowconfigure(0, weight=1)
+
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=0)
+        self.grid_columnconfigure(2, weight=0)
+
+        # Title of the simulation
         self.title = tk.Label(
             self,
             text=name,
             fg=TEXT_COLOR,
             bg=PANEL_COLOR,
-            font=("Segue UI", 24, "bold")
+            font=("Segue UI", 14, "bold")
         )
-        self.title.pack(
-            side="left",
-            anchor="nw",
-            padx=5,
-            pady=5
+        self.title.grid(
+            row=0,
+            column=0,
+            sticky="w",
+            padx=15,
+            pady=8
         )
 
-        # 2. Simulation player status
+        # Simulation player status
         self.player_status = tk.Label(
             self,
-            text=f"{noPlayers}/{maxNoPlayers}",
+            text=f"{no_players}/{max_no_players}",
             fg=TEXT_COLOR,
             bg=PANEL_COLOR,
-            font=("Segue UI", 24)
+            font=("Segue UI", 12)
         )
-        self.player_status.pack(
-            side="left",
-            anchor="nw",
-            padx=5,
-            pady=5
+        self.player_status.grid(
+            row=0,
+            column=1,
+            padx=20,
+            pady=8
         )
 
-        # 3. Join button
+        # Join button
         self.join_button = tk.Button(
             self,
             text="Join",
-            font=("Segue UI", 24),
+            font=("Segue UI", 11),
             bg=PANEL_COLOR,
             fg=TEXT_COLOR,
-            width=20,
-            height=2,
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            activebackground="#505050",
+            padx=20,
             command=lambda: print(f"Simulation {name} joined!")
         )
-        self.join_button.pack(
-            side="right",
-            anchor="ne",
-            padx=5,
-            pady=5
+        self.join_button.grid(
+            row=0,
+            column=2,
+            padx=15,
+            pady=8
         )
 
-        self.pack(fill="x", padx=15, pady=5)
+        # Hover effect for the tile
+        def enter(event):
+            self.title.configure(bg="#343434")
+            self.join_button.configure(bg="#343434")
+            self.player_status.configure(bg="#343434")
+            self.configure(bg="#343434")
+
+        def leave(event):
+            self.title.configure(bg=BACKGROUND_COLOR)
+            self.join_button.configure(bg=BACKGROUND_COLOR)
+            self.player_status.configure(bg=BACKGROUND_COLOR)
+            self.configure(bg=BACKGROUND_COLOR)
+
+        self.bind("<Enter>", enter)
+        self.bind("<Leave>", leave)
+
+        # Disabling the button if the simulation lobby is full
+        if no_players >= max_no_players:
+            self.join_button.config(
+                state="disabled"
+            )

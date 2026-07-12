@@ -1,7 +1,6 @@
 import tkinter as tk
 
 from display_module.join_menu.join_menu_screen import JoinMenuScreen
-from display_module.main_menu.main_menu_screen import MainMenuScreen
 
 if __name__ == '__main__':
     root = tk.Tk()
