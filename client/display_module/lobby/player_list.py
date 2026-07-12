@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from display_module.join_menu.simulation_entry import SimulationEntry
+from display_module.lobby.player_entry import PlayerEntry
 
 BACKGROUND_COLOR = "#1e1e1e"
 PANEL_COLOR = "#262626"
@@ -8,8 +8,8 @@ TEXT_COLOR = "#f0f0f0"
 SECONDARY_COLOR = "#b0b0b0"
 ACCENT_COLOR = "#3b3b3b"
 
-class SimulationList(tk.Frame):
-    def __init__(self, parent, simulation_list):
+class PlayerList(tk.Frame):
+    def __init__(self, parent, player_list):
         tk.Frame.__init__(self, parent)
 
         self.configure(bg=PANEL_COLOR)
@@ -49,7 +49,6 @@ class SimulationList(tk.Frame):
 
         self.canvas.bind("<Configure>", resize_canvas)
 
-
         self.scrollable_frame.bind(
             "<Configure>",
             lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
@@ -74,25 +73,25 @@ class SimulationList(tk.Frame):
             if content_height <= canvas_height:
                 return
 
-            self.canvas.yview_scroll(int(-event.delta/120), "units")
+            self.canvas.yview_scroll(int(-event.delta / 120), "units")
+
         self.bind_all("<MouseWheel>", _on_mousewheel)
 
         # Filling the list elements
-        self.populate_list(simulation_list)
+        self.populate_list(player_list)
 
-    def populate_list(self, simulation_list):
-        for simulation_name, simulation_players in simulation_list.items():
-            SimulationEntry(
+    def populate_list(self, player_list):
+        for player_name, player_status in player_list.items():
+            PlayerEntry(
                 self.scrollable_frame,
-                simulation_name,
-                simulation_players[0],
-                simulation_players[1]
+                player_name,
+                player_status
             ).pack(fill="x")
 
-    def refresh_list(self, simulation_list):
+    def refresh_list(self, player_list):
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
-        self.populate_list(simulation_list)
+        self.populate_list(player_list)
 
         # Update scrolling region
         self.update_idletasks()

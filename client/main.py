@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from display_module.join_menu.join_menu_screen import JoinMenuScreen
+from display_module.lobby.lobby_screen import LobbyScreen
 
 if __name__ == '__main__':
     root = tk.Tk()
@@ -9,7 +9,7 @@ if __name__ == '__main__':
     root.geometry("1000x500")
     root.minsize(1000, 500)
 
-    screen = JoinMenuScreen(root)
+    screen = LobbyScreen(root)
     screen.pack(fill="both", expand=True)
 
     root.mainloop()
